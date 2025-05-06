@@ -146,3 +146,23 @@
     font-size: 24px;
   }
 }
+.topLeftLogo {
+  position: absolute;
+  top: 20px;
+  left: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+}
+
+.topLeftIcon {
+  width: 28px;
+  height: 28px;
+}
+
+.topLeftText {
+  font-size: 20px;
+  font-weight: 700;
+  color: #646cff;
+}

@@ -1,26 +1,37 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import "./Homepage.module.css";
+import styles from "./Homepage.module.css";
 
 function HomePage() {
   return (
-    <div className="container">
-      <div className="card">
+    <>
+      <div className={styles.topLeftLogo}>
         <img
-          src="https://img.icons8.com/color/96/000000/flashcards.png"
-          alt="Fiszki"
-          style={{ display: "block", margin: "0 auto 20px" }}
+          src="https://img.icons8.com/?size=100&id=SHlZSea7WHzv&format=png&color=000000"
+          alt="Logo"
+          className={styles.topLeftIcon}
         />
-        <h1 className="title">Witamy w Fiszkomacie 🎓</h1>
-        <p style={{ textAlign: "center", color: "#555", fontSize: "16px", marginBottom: "30px" }}>
-          Ucz się szybciej i skuteczniej dzięki fiszkom online. Twórz zestawy, ucz się, zapamiętuj.
-        </p>
-        <div className="linksContainer">
-          <Link className="link" to="/login">Zaloguj się</Link>
-          <Link className="link" to="/register">Zarejestruj się</Link>
+        <span className={styles.topLeftText}>Uknow</span>
+      </div>
+
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <h1 className={styles.title}>Witamy w <span className={styles.brand}>Uknow</span></h1>
+          <p>Twórz fiszki, ucz się szybciej i śledź postępy!</p>
+
+          <div className={styles.icons}>
+            <img src="https://img.icons8.com/color/96/brain.png" alt="Pamięć" />
+            <img src="https://img.icons8.com/color/96/test-passed.png" alt="Testy" />
+            <img src="https://img.icons8.com/color/96/books.png" alt="Fiszki" />
+          </div>
+
+          <div className={styles.linksContainer}>
+            <Link className={styles.link} to="/login">Zaloguj się</Link>
+            <Link className={styles.link} to="/register">Zarejestruj się</Link>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

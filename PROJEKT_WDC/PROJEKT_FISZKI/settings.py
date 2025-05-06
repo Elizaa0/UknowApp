@@ -89,7 +89,10 @@ DATABASES = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
-
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
