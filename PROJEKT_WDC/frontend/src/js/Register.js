@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import styles from "./Register.module.css";
+import styles from "../css/Register.module.css";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -164,7 +164,7 @@ function Register() {
         </form>
 
         <div className={styles.loginLink}>
-          Masz już konto? <a href="/login">Zaloguj się</a>
+          Masz już konto? <a href="/js/Login">Zaloguj się</a>
         </div>
       </div>
     </div>
