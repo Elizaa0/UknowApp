@@ -164,7 +164,7 @@ function Register() {
         </form>
 
         <div className={styles.loginLink}>
-          Masz już konto? <a href="/js/Login">Zaloguj się</a>
+          Masz już konto? <a href="/login">Zaloguj się</a>
         </div>
       </div>
     </div>

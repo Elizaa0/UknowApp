@@ -64,7 +64,7 @@ const Dashboard = () => {
   const fetchFlashcardSets = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/flashcard-sets/', {
+      const response = await fetch('http://localhost:8000/api/flashcards/sets/', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -95,7 +95,7 @@ const Dashboard = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcard-sets/${setId}/cards/`, {
+      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${setId}/cards/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -107,7 +107,7 @@ const Dashboard = () => {
       setFlashcards(data.cards || []);
 
       // Aktualizuj statystyki
-      const statsResponse = await fetch(`http://localhost:8000/api/flashcard-sets/${setId}/stats/`, {
+      const statsResponse = await fetch(`http://localhost:8000/api/flashcard/sets/${setId}/stats/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -140,7 +140,7 @@ const Dashboard = () => {
   const createFlashcardSet = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8000/api/flashcard-sets/', {
+      const response = await fetch('http://localhost:8000/api/flashcards/sets/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -177,7 +177,7 @@ const Dashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcard-sets/${activeSet.id}/cards/`, {
+      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${activeSet.id}/cards/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -215,7 +215,7 @@ const Dashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcard-sets/${activeSet.id}/generate/`, {
+      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${activeSet.id}/generate/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -277,7 +277,7 @@ const Dashboard = () => {
     if (window.confirm('Czy na pewno chcesz usunąć ten zestaw fiszek? Ta operacja jest nieodwracalna.')) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8000/api/flashcard-sets/${setId}/`, {
+        const response = await fetch(`http://localhost:8000/api/flashcards/sets/${setId}/`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
