@@ -4,15 +4,17 @@ from .views import (
     FlashcardSetDetailView,
     FlashcardListCreateView,
     FlashcardDetailView,
-    FlashcardsBySetView
+    FlashcardsBySetView,
+    update_flashcard_status
 )
 
 urlpatterns = [
-    path('sets/', FlashcardSetListCreateView.as_view(), name='flashcard-set-list'),
-    path('sets/<int:pk>/', FlashcardSetDetailView.as_view(), name='flashcard-set-detail'),
-
-    path('flashcards/', FlashcardListCreateView.as_view(), name='flashcard-list'),
-    path('flashcards/<int:pk>/', FlashcardDetailView.as_view(), name='flashcard-detail'),
+    path('sets/', FlashcardSetListCreateView.as_view(), name='flashcardset-list'),
+    path('sets/<int:pk>/', FlashcardSetDetailView.as_view(), name='flashcardset-detail'),
+    path('', FlashcardListCreateView.as_view(), name='flashcard-list'),
+    path('<int:pk>/', FlashcardDetailView.as_view(), name='flashcard-detail'),
     path('sets/<int:set_id>/cards/', FlashcardsBySetView.as_view(), name='flashcards-by-set'),
-
+    path('<int:pk>/update-status/', update_flashcard_status, name='update-flashcard-status'),
+    path('<int:pk>/status/', update_flashcard_status, name='update-flashcard-status-alt'),
 ]
+

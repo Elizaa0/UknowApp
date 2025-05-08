@@ -18,7 +18,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/learn" element={<LearningSession />} />
+          <Route path="/learn/:setId" element={<LearningSession />} />
           <Route path="/shared/:token" element={<SharedFlashcards />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

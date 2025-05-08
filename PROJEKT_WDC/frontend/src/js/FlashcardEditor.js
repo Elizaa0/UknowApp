@@ -7,38 +7,80 @@ const FlashcardEditor = ({ onSave, initialData }) => {
   const [category, setCategory] = useState(initialData?.category || 'Programowanie');
   const [difficulty, setDifficulty] = useState(initialData?.difficulty || 'medium');
   const [tags, setTags] = useState(initialData?.tags?.join(', ') || '');
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (front.trim().length < 5) {
+      newErrors.front = 'Przód fiszki musi mieć minimum 5 znaków';
+    }
+
+    if (back.trim().length < 3) {
+      newErrors.back = 'Tył fiszki musi mieć minimum 3 znaki';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Walidacja formularza
+    if (!validateForm()) {
+      return;
+    }
+
+    // Przekształcenie tagów na tablicę i usunięcie pustych elementów
+    const tagsArray = tags
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag);
+
     onSave({
       front,
       back,
       category,
       difficulty,
-      tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+      tags: tagsArray,
+      // Dodajemy pola wymagane przez backend
+      question: front,
+      answer: back
     });
+
+    // Opcjonalnie: Zresetuj formularz po zapisaniu
+    setFront('');
+    setBack('');
+    setCategory('Programowanie');
+    setDifficulty('medium');
+    setTags('');
   };
 
   return (
     <form onSubmit={handleSubmit} className={styles.editorForm}>
       <div className={styles.formGroup}>
-        <label>Przód fiszki</label>
+        <label>Przód fiszki (min. 5 znaków)</label>
         <textarea
           value={front}
           onChange={(e) => setFront(e.target.value)}
           placeholder="Pytanie/słowo klucz"
           required
+          className={errors.front ? styles.errorInput : ''}
         />
+        {errors.front && <span className={styles.errorText}>{errors.front}</span>}
       </div>
 
       <div className={styles.formGroup}>
-        <label>Tył fiszki</label>
+        <label>Tył fiszki (min. 3 znaki)</label>
         <textarea
           value={back}
           onChange={(e) => setBack(e.target.value)}
           placeholder="Odpowiedź/definicja"
           required
+          className={errors.back ? styles.errorInput : ''}
         />
+        {errors.back && <span className={styles.errorText}>{errors.back}</span>}
       </div>
 
       <div className={styles.formRow}>

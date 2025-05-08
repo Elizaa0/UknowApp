@@ -725,3 +725,213 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+/* Tryb nauki */
+.learningMode {
+  padding: 20px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.learningHeader {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.flashcardWrapper {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.learningCard {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  padding: 30px;
+  min-height: 200px;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.showAnswerButton, .correctButton, .incorrectButton {
+  padding: 10px 20px;
+  margin: 0 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.showAnswerButton {
+  background: #4CAF50;
+  color: white;
+}
+
+.correctButton {
+  background: #4CAF50;
+  color: white;
+}
+
+.incorrectButton {
+  background: #f44336;
+  color: white;
+}
+
+.exitLearningButton {
+  background: #2196F3;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.learningStats {
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* Personalizacja */
+.settingsTab {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.learningMode {
+  background: #f8f9fa;
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 600px;
+  margin: 2rem auto;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.learningHeader {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.sessionStats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.correctStat {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.incorrectStat {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.learningCard {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  min-height: 200px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.cardFront, .cardBack {
+  padding: 1rem;
+  text-align: center;
+  font-size: 1.2rem;
+}
+
+.learningControls {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
+.showAnswerButton {
+  background: #007bff;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.answerButtons {
+  display: flex;
+  gap: 1rem;
+}
+
+.incorrectButton {
+  background: #dc3545;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.correctButton {
+  background: #28a745;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.progressContainer {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+progress {
+  width: 100%;
+  height: 10px;
+  margin-bottom: 1rem;
+}
+
+.exitButton {
+  background: #6c757d;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.statsSummary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.statItem {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  text-align: center;
+  flex: 1;
+}
+
+.statItem h3 {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.statItem p {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2c3e50;
+}

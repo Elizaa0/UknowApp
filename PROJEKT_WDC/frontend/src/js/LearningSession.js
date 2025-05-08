@@ -1,89 +1,157 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// Poprawki do komponentu LearningSession.js
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import styles from '../css/LearningSession.module.css';
 
 const LearningSession = () => {
-  const [cards, setCards] = useState([]);
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [sessionStats, setSessionStats] = useState({
-    new: 0,
-    learning: 0,
-    review: 0,
-    completed: 0
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [rating, setRating] = useState(null);
+  const { setId } = useParams();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchCards = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:8000/api/flashcards/due/', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+  const [flashcards, setFlashcards] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [sessionStats, setSessionStats] = useState({
+    correct: 0,
+    incorrect: 0,
+    total: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [setInfo, setSetInfo] = useState(null);
 
-        if (!response.ok) throw new Error('Błąd ładowania fiszek');
-
-        const data = await response.json();
-        setCards(data.cards);
-        setSessionStats({
-          new: data.new_count,
-          learning: data.learning_count,
-          review: data.review_count,
-          completed: 0
-        });
-      } catch (error) {
-        console.error('Błąd:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCards();
-  }, []);
-
-  const handleFlip = () => {
-    setIsFlipped(!isFlipped);
-  };
-
-  const handleRating = async (difficulty) => {
-    setRating(difficulty);
-
+  // Pobieranie danych zestawu
+  const fetchSetInfo = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
-      const currentCard = cards[currentCardIndex];
+      if (!token) {
+        navigate('/login');
+        return;
+      }
 
-      await fetch(`http://localhost:8000/api/flashcards/${currentCard.id}/review/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ difficulty }),
+      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${setId}/`, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      // Przejdź do następnej karty lub zakończ sesję
-      if (currentCardIndex < cards.length - 1) {
-        setCurrentCardIndex(currentCardIndex + 1);
-        setIsFlipped(false);
-        setRating(null);
-        setSessionStats(prev => ({
-          ...prev,
-          completed: prev.completed + 1
-        }));
-      } else {
-        navigate('/dashboard', { state: { sessionCompleted: true } });
+      if (!response.ok) {
+        throw new Error('Nie udało się pobrać informacji o zestawie');
       }
+
+      const data = await response.json();
+      console.log('Informacje o zestawie:', data);
+      setSetInfo(data);
     } catch (error) {
-      console.error('Błąd zapisywania oceny:', error);
+      console.error('Błąd:', error);
+      setError(error.message);
+    }
+  }, [setId, navigate]);
+
+  // Pobieranie fiszek dla sesji nauki
+  const fetchFlashcards = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      setLoading(true);
+      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${setId}/cards/`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        throw new Error('Nie udało się pobrać fiszek');
+      }
+
+      const data = await response.json();
+      console.log('Pobrane fiszki do nauki:', data);
+
+      // Upewnij się, że każda fiszka ma potrzebne pola
+      const processedCards = Array.isArray(data) ? data.map(card => ({
+        ...card,
+        front: card.front || card.question || '',
+        back: card.back || card.answer || '',
+        category: card.category || 'Bez kategorii',
+      })) : [];
+
+      // Losujemy kolejność kart
+      const shuffledCards = [...processedCards].sort(() => Math.random() - 0.5);
+
+      setFlashcards(shuffledCards);
+      setSessionStats(prev => ({ ...prev, total: shuffledCards.length }));
+    } catch (error) {
+      console.error('Błąd:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [setId, navigate]);
+
+  useEffect(() => {
+    if (!setId) {
+      navigate('/dashboard');
+      return;
+    }
+
+    fetchSetInfo();
+    fetchFlashcards();
+  }, [setId, navigate, fetchSetInfo, fetchFlashcards]);
+
+  // Obsługa odpowiedzi
+  const handleAnswer = (isCorrect) => {
+    // Aktualizuj stan karty w API (opcjonalnie)
+    updateCardProgress(flashcards[currentIndex].id, isCorrect);
+
+    // Aktualizuj statystyki sesji
+    setSessionStats(prev => ({
+      ...prev,
+      correct: isCorrect ? prev.correct + 1 : prev.correct,
+      incorrect: !isCorrect ? prev.incorrect + 1 : prev.incorrect
+    }));
+
+    // Przejdź do następnej karty lub zakończ sesję
+    if (currentIndex < flashcards.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setIsFlipped(false);
+    } else {
+      // Sesja zakończona
+      finishSession();
     }
   };
 
-  if (isLoading) {
+  const updateCardProgress = async (cardId, isCorrect) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8000/api/flashcards/${cardId}/progress/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ correct: isCorrect })
+      });
+
+      if (!response.ok) {
+        console.error('Nie udało się zaktualizować postępu karty');
+      }
+    } catch (error) {
+      console.error('Błąd:', error);
+    }
+  };
+
+  const finishSession = () => {
+    // Przekieruj do pulpitu z informacją o zakończeniu sesji
+    navigate('/dashboard', {
+      state: {
+        sessionCompleted: true,
+        stats: sessionStats
+      }
+    });
+  };
+
+  // Obsługa błędów i ładowania
+  if (loading) {
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.spinner}></div>
@@ -92,95 +160,107 @@ const LearningSession = () => {
     );
   }
 
-  if (cards.length === 0) {
+  if (error) {
     return (
-      <div className={styles.noCardsContainer}>
-        <h2>Brak fiszek do nauki!</h2>
-        <p>Wszystkie fiszki są aktualnie opanowane lub nie masz jeszcze żadnych fiszek.</p>
+      <div className={styles.errorContainer}>
+        <h2>Wystąpił błąd</h2>
+        <p>{error}</p>
         <button
           className={styles.returnButton}
           onClick={() => navigate('/dashboard')}
         >
-          Powrót do Dashboardu
+          Wróć do pulpitu
         </button>
       </div>
     );
   }
 
-  const currentCard = cards[currentCardIndex];
+  if (flashcards.length === 0) {
+    return (
+      <div className={styles.emptyContainer}>
+        <h2>Brak fiszek do nauki</h2>
+        <p>Ten zestaw nie zawiera żadnych fiszek do nauki.</p>
+        <button
+          className={styles.returnButton}
+          onClick={() => navigate('/dashboard')}
+        >
+          Wróć do pulpitu
+        </button>
+      </div>
+    );
+  }
+
+  // Renderowanie sesji nauki
+  const currentCard = flashcards[currentIndex];
 
   return (
-    <div className={styles.sessionContainer}>
-      <div className={styles.progressBar}>
-        <div
-          className={styles.progressFill}
-          style={{ width: `${(currentCardIndex / cards.length) * 100}%` }}
-        ></div>
-      </div>
+    <div className={styles.learningSession}>
+      <header className={styles.sessionHeader}>
+        <h2>{setInfo?.name || 'Sesja nauki'}</h2>
+        <div className={styles.progress}>
+          <span>Karta {currentIndex + 1} z {flashcards.length}</span>
+          <div className={styles.progressBar}>
+            <div
+              className={styles.progressFill}
+              style={{ width: `${((currentIndex) / flashcards.length) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+      </header>
 
       <div className={styles.stats}>
-        <span>Nowe: {sessionStats.new}</span>
-        <span>W nauce: {sessionStats.learning}</span>
-        <span>Powtórki: {sessionStats.review}</span>
-        <span>Ukończone: {sessionStats.completed}</span>
+        <div className={styles.statItem}>
+          <span className={styles.correct}>Poprawne</span>
+          <span>{sessionStats.correct}</span>
+        </div>
+        <div className={styles.statItem}>
+          <span className={styles.incorrect}>Niepoprawne</span>
+          <span>{sessionStats.incorrect}</span>
+        </div>
       </div>
 
       <div
         className={`${styles.flashcard} ${isFlipped ? styles.flipped : ''}`}
-        onClick={handleFlip}
+        onClick={() => setIsFlipped(!isFlipped)}
       >
-        <div className={styles.cardContent}>
-          {!isFlipped ? (
-            <div className={styles.front}>
-              <h3>{currentCard.front}</h3>
-              <p className={styles.category}>{currentCard.category}</p>
-            </div>
-          ) : (
-            <div className={styles.back}>
-              <h3>{currentCard.back}</h3>
-              {currentCard.example && (
-                <div className={styles.example}>
-                  <h4>Przykład:</h4>
-                  <p>{currentCard.example}</p>
-                </div>
-              )}
-            </div>
-          )}
+        <div className={styles.cardFace + ' ' + styles.front}>
+          {currentCard.front}
+        </div>
+        <div className={styles.cardFace + ' ' + styles.back}>
+          {currentCard.back}
         </div>
       </div>
 
-      {isFlipped && (
-        <div className={styles.ratingButtons}>
-          <p>Jak dobrze znałeś odpowiedź?</p>
-          <div className={styles.buttons}>
+      <div className={styles.actions}>
+        {!isFlipped ? (
+          <button className={styles.flipButton} onClick={() => setIsFlipped(true)}>
+            Pokaż odpowiedź
+          </button>
+        ) : (
+          <>
             <button
-              className={`${styles.ratingButton} ${styles.hard}`}
-              onClick={() => handleRating('hard')}
-              disabled={rating !== null}
+              className={styles.incorrectButton}
+              onClick={() => handleAnswer(false)}
             >
-              Trudne
+              Nie znam
             </button>
             <button
-              className={`${styles.ratingButton} ${styles.medium}`}
-              onClick={() => handleRating('medium')}
-              disabled={rating !== null}
+              className={styles.correctButton}
+              onClick={() => handleAnswer(true)}
             >
-              Średnie
+              Znam
             </button>
-            <button
-              className={`${styles.ratingButton} ${styles.easy}`}
-              onClick={() => handleRating('easy')}
-              disabled={rating !== null}
-            >
-              Łatwe
-            </button>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       <button
-        className={styles.endSessionButton}
-        onClick={() => navigate('/dashboard')}
+        className={styles.exitButton}
+        onClick={() => {
+          if (window.confirm('Czy na pewno chcesz zakończyć sesję nauki?')) {
+            navigate('/dashboard');
+          }
+        }}
       >
         Zakończ sesję
       </button>

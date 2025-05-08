@@ -28,17 +28,29 @@ const Dashboard = () => {
   const [notification, setNotification] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  const [learningMode, setLearningMode] = useState(false);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [learningProgress, setLearningProgress] = useState({
+    correct: 0,
+    incorrect: 0
+  });
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Funkcja do pokazywania powiadomień
+  const isDue = (dueDate) => {
+    if (!dueDate) return false;
+    const now = new Date();
+    const due = new Date(dueDate);
+    return due <= now;
+  };
+
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Pobieranie danych użytkownika
   const fetchUserData = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -50,7 +62,6 @@ const Dashboard = () => {
       });
 
       if (!response.ok) throw new Error('Błąd podczas ładowania danych użytkownika');
-
       const userData = await response.json();
       setUserData(userData);
       return userData;
@@ -60,83 +71,178 @@ const Dashboard = () => {
     }
   }, []);
 
-  // Pobieranie zestawów fiszek
   const fetchFlashcardSets = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8000/api/flashcards/sets/', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      if (!response.ok) throw new Error('Błąd podczas ładowania zestawów fiszek');
-
+      if (!response.ok) throw new Error('Błąd podczas ładowania zestawów');
       const data = await response.json();
-      setFlashcardSets(data.sets || []);
+      setFlashcardSets(data);
 
-      // Ustaw pierwszy zestaw jako aktywny, jeśli istnieje i nie ma aktywnego zestawu
-      if (data.sets && data.sets.length > 0 && !activeSet) {
-        setActiveSet(data.sets[0]);
-        fetchFlashcards(data.sets[0].id);
+      if (data?.length > 0 && !activeSet) {
+        setActiveSet(data[0]);
       }
-
-      return data.sets;
     } catch (error) {
       console.error('Błąd:', error);
       return [];
     }
   }, [activeSet]);
 
-  // Pobieranie fiszek dla określonego zestawu
-  const fetchFlashcards = useCallback(async (setId) => {
-    if (!setId) return;
+  const updateStats = useCallback((cards) => {
+  const mastered = cards.filter(card => card.status === 'mastered').length;
+  const due = cards.filter(card =>
+    card.status === 'learning' &&
+    isDue(card.due_date)
+  ).length;
+  const learning = cards.filter(card =>
+    card.status !== 'mastered' &&
+    !isDue(card.due_date)
+  ).length;
 
+  setStats({
+    total: cards.length,
+    mastered,
+    due,
+    learning
+  });
+}, []);
+
+  const fetchFlashcards = useCallback(async (setId) => {
     try {
-      setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${setId}/cards/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const response = await fetch(
+        `http://localhost:8000/api/flashcards/sets/${setId}/cards/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         }
-      });
+      );
 
       if (!response.ok) throw new Error('Błąd podczas ładowania fiszek');
-
       const data = await response.json();
-      setFlashcards(data.cards || []);
 
-      // Aktualizuj statystyki
-      const statsResponse = await fetch(`http://localhost:8000/api/flashcard/sets/${setId}/stats/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const processedData = Array.isArray(data) ? data.map(card => ({
+        ...card,
+        front: card.front || card.question || '',
+        back: card.back || card.answer || '',
+        category: card.category || 'Bez kategorii',
+        difficulty: card.difficulty || 'medium',
+        status: card.status || 'learning',
+        due_date: card.due_date || null,
+        tags: card.tags || []
+      })) : [];
 
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
-        setStats({
-          total: statsData.total || 0,
-          mastered: statsData.mastered || 0,
-          learning: statsData.learning || 0,
-          due: statsData.due || 0
-        });
-      }
+      setFlashcards(processedData);
+      updateStats(processedData);
     } catch (error) {
       console.error('Błąd:', error);
       setFlashcards([]);
-      setStats({
-        total: 0,
-        mastered: 0,
-        learning: 0,
-        due: 0
-      });
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [updateStats]);
 
-  // Tworzenie nowego zestawu fiszek
+  const updateFlashcardStatus = async (cardId, isCorrect) => {
+    try {
+      const token = localStorage.getItem('token');
+      const dueDate = isCorrect ? null : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+      const response = await fetch(
+        `http://localhost:8000/api/flashcards/${cardId}/status/`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            status: isCorrect ? 'mastered' : 'learning',
+            due_date: dueDate
+          })
+        }
+      );
+
+      if (!response.ok) throw new Error('Błąd aktualizacji statusu fiszki');
+      return await response.json();
+    } catch (error) {
+      console.error('Błąd:', error);
+      throw error;
+    }
+  };
+
+  const startLearning = () => {
+    if (!activeSet) {
+      showNotification('Wybierz zestaw fiszek, aby rozpocząć naukę', 'error');
+      return;
+    }
+    if (flashcards.length === 0) {
+      showNotification('Ten zestaw nie zawiera żadnych fiszek', 'error');
+      return;
+    }
+    setLearningMode(true);
+    setCurrentCardIndex(0);
+    setShowAnswer(false);
+    setLearningProgress({ correct: 0, incorrect: 0 });
+  };
+
+  const handleLearningResponse = async (isCorrect) => {
+    try {
+      const currentCard = flashcards[currentCardIndex];
+      if (!currentCard) throw new Error('Brak aktualnej fiszki');
+
+      setLearningProgress(prev => ({
+        correct: isCorrect ? prev.correct + 1 : prev.correct,
+        incorrect: !isCorrect ? prev.incorrect + 1 : prev.incorrect
+      }));
+
+      const updatedCard = {
+        ...currentCard,
+        status: isCorrect ? 'mastered' : 'learning',
+        due_date: isCorrect ? null : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      };
+
+      const updatedFlashcards = flashcards.map((card, idx) =>
+        idx === currentCardIndex ? updatedCard : card
+      );
+
+      await updateFlashcardStatus(currentCard.id, isCorrect);
+
+      setFlashcards(updatedFlashcards);
+      updateStats(updatedFlashcards);
+
+      if (currentCardIndex < flashcards.length - 1) {
+        setCurrentCardIndex(currentCardIndex + 1);
+        setShowAnswer(false);
+      } else {
+        endLearningSession();
+      }
+
+      showNotification(
+        isCorrect
+          ? 'Dobra odpowiedź! Fiszka oznaczona jako opanowana.'
+          : 'Fiszka wymaga powtórki. Wrócimy do niej jutro.',
+        isCorrect ? 'success' : 'info'
+      );
+
+    } catch (error) {
+      console.error('Błąd:', error);
+      setLearningProgress(prev => ({
+        correct: isCorrect ? prev.correct - 1 : prev.correct,
+        incorrect: !isCorrect ? prev.incorrect - 1 : prev.incorrect
+      }));
+      showNotification('Nie udało się zapisać odpowiedzi. Spróbuj ponownie.', 'error');
+    }
+  };
+
+  const endLearningSession = () => {
+    setLearningMode(false);
+    showNotification('Sesja nauki zakończona!', 'success');
+    setCurrentCardIndex(0);
+    setShowAnswer(false);
+    if (activeSet) {
+      fetchFlashcards(activeSet.id);
+    }
+  };
+
   const createFlashcardSet = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -153,60 +259,69 @@ const Dashboard = () => {
       });
 
       if (!response.ok) throw new Error('Błąd podczas tworzenia zestawu');
-
-      const data = await response.json();
-      setFlashcardSets(prev => [...prev, data.set]);
-      setActiveSet(data.set);
+      const newSet = await response.json();
+      setFlashcardSets(prev => [...prev, newSet]);
       setShowCreateSetModal(false);
       setNewSetName('');
       setNewSetDescription('');
-      showNotification('Zestaw fiszek został utworzony!');
-      fetchFlashcards(data.set.id);
+      showNotification('Zestaw został utworzony!');
     } catch (error) {
       console.error('Błąd:', error);
-      showNotification('Nie udało się utworzyć zestawu.', 'error');
+      showNotification('Nie udało się utworzyć zestawu', 'error');
     }
   };
 
-  // Dodawanie nowej fiszki
   const handleAddFlashcard = async (newFlashcard) => {
-    if (!activeSet) {
-      showNotification('Wybierz lub utwórz zestaw fiszek!', 'error');
-      return;
-    }
-
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${activeSet.id}/cards/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newFlashcard)
-      });
+      if (!token || !activeSet) {
+        throw new Error('Brak tokenu lub aktywnego zestawu');
+      }
 
-      if (!response.ok) throw new Error('Błąd podczas dodawania fiszki');
+      const flashcardData = {
+        front: newFlashcard.front,
+        back: newFlashcard.back,
+        difficulty: newFlashcard.difficulty,
+        question: newFlashcard.front,
+        answer: newFlashcard.back,
+        ...(newFlashcard.category && { category: newFlashcard.category }),
+        ...(newFlashcard.tags?.length > 0 && { tags_ids: newFlashcard.tags })
+      };
+
+      const response = await fetch(
+        `http://localhost:8000/api/flashcards/sets/${activeSet.id}/cards/`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(flashcardData)
+        }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+        throw new Error('Sesja wygasła, zaloguj się ponownie');
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Błąd podczas dodawania fiszki');
+      }
 
       const data = await response.json();
-      setFlashcards(prev => [...prev, data.card]);
-      setShowEditor(false);
-
-      // Aktualizuj statystyki
-      setStats(prev => ({
-        ...prev,
-        total: prev.total + 1,
-        learning: prev.learning + 1
-      }));
-
+      setFlashcards(prev => [...prev, data]);
+      updateStats([...flashcards, data]);
       showNotification('Fiszka została dodana!');
+      setShowEditor(false);
     } catch (error) {
       console.error('Błąd:', error);
-      showNotification('Nie udało się dodać fiszki.', 'error');
+      showNotification(error.message, 'error');
     }
   };
 
-  // Generowanie fiszek
   const handleGenerateFlashcards = async (generatedFlashcards) => {
     if (!activeSet) {
       showNotification('Wybierz lub utwórz zestaw fiszek!', 'error');
@@ -225,18 +340,11 @@ const Dashboard = () => {
       });
 
       if (!response.ok) throw new Error('Błąd podczas generowania fiszek');
-
       const data = await response.json();
+
       setFlashcards(prev => [...prev, ...data.cards]);
+      updateStats([...flashcards, ...data.cards]);
       setShowGenerator(false);
-
-      // Aktualizuj statystyki
-      setStats(prev => ({
-        ...prev,
-        total: prev.total + data.cards.length,
-        learning: prev.learning + data.cards.length
-      }));
-
       showNotification(`Wygenerowano ${data.cards.length} nowych fiszek!`);
     } catch (error) {
       console.error('Błąd:', error);
@@ -244,27 +352,19 @@ const Dashboard = () => {
     }
   };
 
-  // Usuwanie fiszki
   const deleteFlashcard = async (cardId) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8000/api/flashcards/${cardId}/`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (!response.ok) throw new Error('Błąd podczas usuwania fiszki');
 
-      setFlashcards(prev => prev.filter(card => card.id !== cardId));
-
-      // Aktualizuj statystyki
-      setStats(prev => ({
-        ...prev,
-        total: Math.max(0, prev.total - 1)
-      }));
-
+      const updatedFlashcards = flashcards.filter(card => card.id !== cardId);
+      setFlashcards(updatedFlashcards);
+      updateStats(updatedFlashcards);
       showNotification('Fiszka została usunięta!');
     } catch (error) {
       console.error('Błąd:', error);
@@ -272,51 +372,56 @@ const Dashboard = () => {
     }
   };
 
-  // Usuwanie zestawu fiszek
   const deleteFlashcardSet = async (setId) => {
-    if (window.confirm('Czy na pewno chcesz usunąć ten zestaw fiszek? Ta operacja jest nieodwracalna.')) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8000/api/flashcards/sets/${setId}/`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+    if (!window.confirm('Czy na pewno chcesz usunąć ten zestaw fiszek? Ta operacja jest nieodwracalna.')) {
+      return;
+    }
 
-        if (!response.ok) throw new Error('Błąd podczas usuwania zestawu');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${setId}/`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
 
-        setFlashcardSets(prev => prev.filter(set => set.id !== setId));
+      if (!response.ok) throw new Error('Błąd podczas usuwania zestawu');
 
-        if (activeSet && activeSet.id === setId) {
-          const remainingSets = flashcardSets.filter(set => set.id !== setId);
-          if (remainingSets.length > 0) {
-            setActiveSet(remainingSets[0]);
-            fetchFlashcards(remainingSets[0].id);
-          } else {
-            setActiveSet(null);
-            setFlashcards([]);
-            setStats({
-              total: 0,
-              mastered: 0,
-              learning: 0,
-              due: 0
-            });
-          }
+      const updatedSets = flashcardSets.filter(set => set.id !== setId);
+      setFlashcardSets(updatedSets);
+
+      if (activeSet?.id === setId) {
+        if (updatedSets.length > 0) {
+          setActiveSet(updatedSets[0]);
+        } else {
+          setActiveSet(null);
+          setFlashcards([]);
+          setStats({ total: 0, mastered: 0, learning: 0, due: 0 });
         }
-
-        showNotification('Zestaw fiszek został usunięty!');
-      } catch (error) {
-        console.error('Błąd:', error);
-        showNotification('Nie udało się usunąć zestawu.', 'error');
       }
+
+      showNotification('Zestaw fiszek został usunięty!');
+    } catch (error) {
+      console.error('Błąd:', error);
+      showNotification('Nie udało się usunąć zestawu.', 'error');
     }
   };
 
-  // Inicjalizacja danych
+  const filteredFlashcards = flashcards.filter(card => {
+    const frontText = card.front || card.question || '';
+    const backText = card.back || card.answer || '';
+    const searchTermLower = searchTerm.toLowerCase();
+    return frontText.toLowerCase().includes(searchTermLower) ||
+           backText.toLowerCase().includes(searchTermLower);
+  }).filter(card => {
+    if (!filterCategory) return true;
+    if (filterCategory === 'Bez kategorii') return !card.category || card.category === '';
+    return card.category === filterCategory;
+  });
+
+  const categories = [...new Set(flashcards.map(card => card.category || 'Bez kategorii'))];
+
   useEffect(() => {
     const token = localStorage.getItem('token');
-
     if (!token) {
       navigate('/login', { replace: true });
       return;
@@ -332,9 +437,8 @@ const Dashboard = () => {
           return;
         }
 
-        const sets = await fetchFlashcardSets();
+        await fetchFlashcardSets();
 
-        // Sprawdź, czy mamy powiadomienie o zakończonej sesji
         if (location.state?.sessionCompleted) {
           showNotification('Sesja nauki zakończona! Dobra robota!');
           navigate(location.pathname, { replace: true });
@@ -349,23 +453,12 @@ const Dashboard = () => {
     initData();
   }, [navigate, location, fetchUserData, fetchFlashcardSets]);
 
-  // Zmiana aktywnego zestawu
   useEffect(() => {
     if (activeSet) {
       fetchFlashcards(activeSet.id);
     }
   }, [activeSet, fetchFlashcards]);
 
-  // Filtrowanie fiszek
-  const filteredFlashcards = flashcards
-    .filter(card => card.front.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  card.back.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter(card => filterCategory ? card.category === filterCategory : true);
-
-  // Dostępne kategorie
-  const categories = [...new Set(flashcards.map(card => card.category))];
-
-  // Render komponentu podczas ładowania
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -383,390 +476,467 @@ const Dashboard = () => {
         </div>
       )}
 
-      <header className={styles.header}>
-        <div className={styles.userInfo}>
-          <div className={styles.avatar}>
-            {userData?.username?.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <h2>Witaj, {userData?.username || 'Użytkowniku'}!</h2>
-            <p className={styles.userEmail}>{userData?.email}</p>
-          </div>
-        </div>
-        <div className={styles.headerActions}>
-          <button
-            className={styles.settingsButton}
-            onClick={() => setActiveTab('settings')}
-          >
-            Ustawienia
-          </button>
-          <button
-            className={styles.logoutButton}
-            onClick={() => {
-              localStorage.clear();
-              navigate('/login');
-            }}
-          >
-            Wyloguj się
-          </button>
-        </div>
-      </header>
-
-      <div className={styles.mainContent}>
-        <aside className={styles.sidebar}>
-          <div className={styles.sidebarHeader}>
-            <h3>Zestawy fiszek</h3>
-            <button
-              className={styles.addSetButton}
-              onClick={() => setShowCreateSetModal(true)}
-            >
-              +
-            </button>
+      {learningMode ? (
+        <div className={styles.learningMode}>
+          <div className={styles.learningHeader}>
+            <h2>Tryb nauki: {activeSet?.name}</h2>
+            <p>Fiszka {currentCardIndex + 1} z {flashcards.length}</p>
+            <div className={styles.sessionStats}>
+              <span className={styles.correctStat}>✔ {learningProgress.correct}</span>
+              <span className={styles.incorrectStat}>✖ {learningProgress.incorrect}</span>
+            </div>
           </div>
 
-          <div className={styles.setsList}>
-            {flashcardSets.length > 0 ? (
-              flashcardSets.map(set => (
-                <div
-                  key={set.id}
-                  className={`${styles.setItem} ${activeSet && activeSet.id === set.id ? styles.activeSet : ''}`}
-                  onClick={() => setActiveSet(set)}
+          {flashcards.length > 0 && (
+            <>
+              <div className={`${styles.learningCard} ${showAnswer ? styles.showAnswer : ''}`}>
+                <div className={styles.cardContent}>
+                  <div className={styles.cardFront}>
+                    {flashcards[currentCardIndex]?.front || flashcards[currentCardIndex]?.question || 'Brak treści'}
+                  </div>
+                  {showAnswer && (
+                    <div className={styles.cardBack}>
+                      {flashcards[currentCardIndex]?.back || flashcards[currentCardIndex]?.answer || 'Brak odpowiedzi'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.learningControls}>
+                {!showAnswer ? (
+                  <button
+                    className={styles.showAnswerButton}
+                    onClick={() => setShowAnswer(true)}
+                  >
+                    Pokaż odpowiedź
+                  </button>
+                ) : (
+                  <div className={styles.answerButtons}>
+                    <button
+                      className={styles.incorrectButton}
+                      onClick={() => handleLearningResponse(false)}
+                    >
+                      Źle odpowiedziałem
+                    </button>
+                    <button
+                      className={styles.correctButton}
+                      onClick={() => handleLearningResponse(true)}
+                    >
+                      Dobrze odpowiedziałem
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.progressContainer}>
+                <progress
+                  value={currentCardIndex + 1}
+                  max={flashcards.length}
+                />
+                <button
+                  className={styles.exitButton}
+                  onClick={() => setLearningMode(false)}
                 >
-                  <span className={styles.setName}>{set.name}</span>
-                  <div className={styles.setActions}>
-                    <button
-                      className={styles.shareButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveSet(set);
-                        setShowShareManager(true);
-                      }}
-                    >
-                      Udostępnij
-                    </button>
-                    <button
-                      className={styles.deleteButton}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteFlashcardSet(set.id);
-                      }}
-                    >
-                      Usuń
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className={styles.noSets}>Brak zestawów fiszek</p>
-            )}
-          </div>
-        </aside>
-
-        <main className={styles.content}>
-          {activeSet && (
-            <div className={styles.setHeader}>
-              <h2>{activeSet.name}</h2>
-              <p>{activeSet.description}</p>
-            </div>
+                  Zakończ naukę
+                </button>
+              </div>
+            </>
           )}
-
-          <div className={styles.statsGrid}>
-            <div className={styles.statCard}>
-              <h3>Wszystkie fiszki</h3>
-              <p>{stats.total}</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>Opanowane</h3>
-              <p>{stats.mastered}</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>W trakcie nauki</h3>
-              <p>{stats.learning}</p>
-            </div>
-            <div className={styles.statCard}>
-              <h3>Do powtórki</h3>
-              <p>{stats.due}</p>
-            </div>
-          </div>
-
-          <div className={styles.tabs}>
-            <button
-              className={`${styles.tabButton} ${activeTab === 'fiszki' ? styles.active : ''}`}
-              onClick={() => setActiveTab('fiszki')}
-            >
-              Moje fiszki
-            </button>
-            <button
-              className={`${styles.tabButton} ${activeTab === 'dodaj' ? styles.active : ''}`}
-              onClick={() => setActiveTab('dodaj')}
-            >
-              Dodaj fiszkę
-            </button>
-            <button
-              className={`${styles.tabButton} ${activeTab === 'nauka' ? styles.active : ''}`}
-              onClick={() => setActiveTab('nauka')}
-            >
-              Rozpocznij naukę
-            </button>
-            <button
-              className={`${styles.tabButton} ${activeTab === 'settings' ? styles.active : ''}`}
-              onClick={() => setActiveTab('settings')}
-            >
-              Personalizacja
-            </button>
-          </div>
-
-          <div className={styles.tabContent}>
-            {activeTab === 'fiszki' && (
-              <div className={styles.flashcardsList}>
-                <div className={styles.flashcardsHeader}>
-                  <h3>Moje fiszki</h3>
-                  <div className={styles.filters}>
-                    <input
-                      type="text"
-                      placeholder="Szukaj fiszek..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className={styles.searchInput}
-                    />
-                    <select
-                      value={filterCategory}
-                      onChange={(e) => setFilterCategory(e.target.value)}
-                      className={styles.categoryFilter}
-                    >
-                      <option value="">Wszystkie kategorie</option>
-                      {categories.map(category => (
-                        <option key={category} value={category}>{category}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {!activeSet ? (
-                  <div className={styles.noActiveSet}>
-                    <p>Wybierz zestaw fiszek z listy lub utwórz nowy zestaw.</p>
-                    <button
-                      className={styles.createSetPrompt}
-                      onClick={() => setShowCreateSetModal(true)}
-                    >
-                      Utwórz nowy zestaw
-                    </button>
-                  </div>
-                ) : filteredFlashcards.length > 0 ? (
-                  <ul className={styles.cardGrid}>
-                    {filteredFlashcards.map(card => (
-                      <li key={card.id} className={styles.flashcardItem}>
-                        <div className={styles.cardHeader}>
-                          <span className={styles.cardCategory}>{card.category}</span>
-                          <span className={`${styles.difficulty} ${styles[card.difficulty]}`}>
-                            {card.difficulty === 'easy' ? 'Łatwa' :
-                             card.difficulty === 'medium' ? 'Średnia' : 'Trudna'}
-                          </span>
-                        </div>
-                        <div className={styles.cardContent}>
-                          <div className={styles.cardFront}>{card.front}</div>
-                          <div className={styles.cardBack}>{card.back}</div>
-                        </div>
-                        <div className={styles.cardFooter}>
-                          {card.tags && card.tags.length > 0 && (
-                            <div className={styles.cardTags}>
-                              {card.tags.map(tag => (
-                                <span key={tag} className={styles.tag}>#{tag}</span>
-                              ))}
-                            </div>
-                          )}
-                          <button
-                            className={styles.deleteCardButton}
-                            onClick={() => deleteFlashcard(card.id)}
-                          >
-                            Usuń
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className={styles.noCards}>
-                    {searchTerm || filterCategory ?
-                      'Brak fiszek pasujących do kryteriów wyszukiwania.' :
-                      'Brak fiszek w tym zestawie. Dodaj pierwszą fiszkę!'}
-                  </p>
-                )}
+        </div>
+      ) : (
+        <>
+          <header className={styles.header}>
+            <div className={styles.userInfo}>
+              <div className={styles.avatar}>
+                {userData?.username?.charAt(0).toUpperCase()}
               </div>
-            )}
-
-            {activeTab === 'dodaj' && (
-              <div className={styles.addFlashcard}>
-                {!activeSet ? (
-                  <div className={styles.noActiveSet}>
-                    <p>Wybierz zestaw fiszek z listy lub utwórz nowy zestaw, aby dodać fiszkę.</p>
-                    <button
-                      className={styles.createSetPrompt}
-                      onClick={() => setShowCreateSetModal(true)}
-                    >
-                      Utwórz nowy zestaw
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div className={styles.addOptions}>
-                      <button
-                        className={`${styles.optionButton} ${showEditor ? styles.active : ''}`}
-                        onClick={() => {
-                          setShowEditor(true);
-                          setShowGenerator(false);
-                        }}
-                      >
-                        Ręczne dodanie
-                      </button>
-                      <button
-                        className={`${styles.optionButton} ${showGenerator ? styles.active : ''}`}
-                        onClick={() => {
-                          setShowGenerator(true);
-                          setShowEditor(false);
-                        }}
-                      >
-                        Generuj automatycznie
-                      </button>
-                    </div>
-
-                    {showEditor && (
-                      <FlashcardEditor
-                        onSave={handleAddFlashcard}
-                        onCancel={() => setShowEditor(false)}
-                      />
-                    )}
-
-                    {showGenerator && (
-                      <AutoGenerator
-                        onGenerate={handleGenerateFlashcards}
-                        onCancel={() => setShowGenerator(false)}
-                      />
-                    )}
-
-                    {!showEditor && !showGenerator && (
-                      <div className={styles.addPrompt}>
-                        <p>Wybierz metodę dodawania fiszek powyżej.</p>
-                      </div>
-                    )}
-                  </>
-                )}
+              <div>
+                <h2>Witaj, {userData?.username || 'Użytkowniku'}!</h2>
+                <p className={styles.userEmail}>{userData?.email}</p>
               </div>
-            )}
-
-            {activeTab === 'nauka' && (
-              <div className={styles.learnSection}>
-                {!activeSet ? (
-                  <div className={styles.noActiveSet}>
-                    <p>Wybierz zestaw fiszek z listy lub utwórz nowy zestaw, aby rozpocząć naukę.</p>
-                    <button
-                      className={styles.createSetPrompt}
-                      onClick={() => setShowCreateSetModal(true)}
-                    >
-                      Utwórz nowy zestaw
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <h3>Gotowy do nauki?</h3>
-                    <p>Masz {stats.due} fiszek do powtórki w zestawie "{activeSet.name}".</p>
-
-                    <button
-                      className={styles.startLearningButton}
-                      onClick={() => navigate(`/learn/${activeSet.id}`)}
-                      disabled={stats.due === 0}
-                    >
-                      Rozpocznij sesję nauki
-                    </button>
-
-                    <div className={styles.learningStats}>
-                      <div className={styles.progressContainer}>
-                        <h4>Postęp nauki</h4>
-                        <div className={styles.progressBar}>
-                          <div
-                            className={styles.progressFill}
-                            style={{ width: `${stats.total > 0 ? (stats.mastered / stats.total) * 100 : 0}%` }}
-                          ></div>
-                        </div>
-                        <span>Opanowane: {stats.total > 0 ? Math.round((stats.mastered / stats.total) * 100) : 0}%</span>
-                      </div>
-
-                      <div className={styles.learningSchedule}>
-                        <h4>Najbliższe powtórki</h4>
-                        {stats.due > 0 ? (
-                          <p>Masz {stats.due} fiszek czekających na powtórkę.</p>
-                        ) : (
-                          <p>Brak fiszek do powtórki. Wszystkie opanowane!</p>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'settings' && (
-              <div className={styles.settingsTab}>
-                <PersonalizationSettings />
-
-                {showShareManager && activeSet && (
-                  <div className={styles.shareSection}>
-                    <h3>Udostępnianie zestawu "{activeSet.name}"</h3>
-                    <ShareManager
-                      flashcardSetId={activeSet.id}
-                      onClose={() => setShowShareManager(false)}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </main>
-      </div>
-
-      {/* Modal tworzenia nowego zestawu */}
-      {showCreateSetModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <h3>Utwórz nowy zestaw fiszek</h3>
-            <div className={styles.formGroup}>
-              <label>Nazwa zestawu</label>
-              <input
-                type="text"
-                value={newSetName}
-                onChange={(e) => setNewSetName(e.target.value)}
-                placeholder="np. Angielski - poziom B2"
-              />
             </div>
-            <div className={styles.formGroup}>
-              <label>Opis (opcjonalnie)</label>
-              <textarea
-                value={newSetDescription}
-                onChange={(e) => setNewSetDescription(e.target.value)}
-                placeholder="Krótki opis zestawu..."
-              ></textarea>
-            </div>
-            <div className={styles.modalButtons}>
+            <div className={styles.headerActions}>
               <button
-                className={styles.cancelButton}
+                className={styles.settingsButton}
+                onClick={() => setActiveTab('settings')}
+              >
+                Ustawienia
+              </button>
+              <button
+                className={styles.logoutButton}
                 onClick={() => {
-                  setShowCreateSetModal(false);
-                  setNewSetName('');
-                  setNewSetDescription('');
+                  localStorage.clear();
+                  navigate('/login');
                 }}
               >
-                Anuluj
-              </button>
-              <button
-                className={styles.createButton}
-                onClick={createFlashcardSet}
-                disabled={!newSetName.trim()}
-              >
-                Utwórz zestaw
+                Wyloguj się
               </button>
             </div>
+          </header>
+
+          <div className={styles.mainContent}>
+            <aside className={styles.sidebar}>
+              <div className={styles.sidebarHeader}>
+                <h3>Zestawy fiszek</h3>
+                <button
+                  className={styles.addSetButton}
+                  onClick={() => setShowCreateSetModal(true)}
+                >
+                  +
+                </button>
+              </div>
+
+              <div className={styles.setsList}>
+                {flashcardSets.length > 0 ? (
+                  flashcardSets.map(set => (
+                    <div
+                      key={set.id}
+                      className={`${styles.setItem} ${activeSet?.id === set.id ? styles.activeSet : ''}`}
+                      onClick={() => setActiveSet(set)}
+                    >
+                      <span className={styles.setName}>{set.name}</span>
+                      <div className={styles.setActions}>
+                        <button
+                          className={styles.shareButton}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveSet(set);
+                            setShowShareManager(true);
+                          }}
+                        >
+                          Udostępnij
+                        </button>
+                        <button
+                          className={styles.deleteButton}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteFlashcardSet(set.id);
+                          }}
+                        >
+                          Usuń
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className={styles.noSets}>Brak zestawów fiszek</p>
+                )}
+              </div>
+            </aside>
+
+            <main className={styles.content}>
+              {activeSet && (
+                <div className={styles.setHeader}>
+                  <h2>{activeSet.name}</h2>
+                  <p>{activeSet.description}</p>
+                </div>
+              )}
+
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                  <h3>Wszystkie fiszki</h3>
+                  <p>{stats.total}</p>
+                </div>
+                <div className={styles.statCard}>
+                  <h3>Opanowane</h3>
+                  <p>{stats.mastered}</p>
+                </div>
+                <div className={styles.statCard}>
+                  <h3>W trakcie nauki</h3>
+                  <p>{stats.learning}</p>
+                </div>
+                <div className={styles.statCard}>
+                  <h3>Do powtórki</h3>
+                  <p>{stats.due}</p>
+                </div>
+              </div>
+
+              <div className={styles.tabs}>
+                <button
+                  className={`${styles.tabButton} ${activeTab === 'fiszki' ? styles.active : ''}`}
+                  onClick={() => setActiveTab('fiszki')}
+                >
+                  Moje fiszki
+                </button>
+                <button
+                  className={`${styles.tabButton} ${activeTab === 'dodaj' ? styles.active : ''}`}
+                  onClick={() => setActiveTab('dodaj')}
+                >
+                  Dodaj fiszkę
+                </button>
+                <button
+                  className={`${styles.tabButton} ${activeTab === 'nauka' ? styles.active : ''}`}
+                  onClick={startLearning}
+                  disabled={!activeSet || flashcards.length === 0}
+                >
+                  Rozpocznij naukę
+                </button>
+                <button
+                  className={`${styles.tabButton} ${activeTab === 'settings' ? styles.active : ''}`}
+                  onClick={() => setActiveTab('settings')}
+                >
+                  Personalizacja
+                </button>
+              </div>
+
+              <div className={styles.tabContent}>
+                {activeTab === 'fiszki' && (
+                  <div className={styles.flashcardsList}>
+                    <div className={styles.flashcardsHeader}>
+                      <h3>Moje fiszki</h3>
+                      <div className={styles.filters}>
+                        <input
+                          type="text"
+                          placeholder="Szukaj fiszek..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className={styles.searchInput}
+                        />
+                        <select
+                          value={filterCategory}
+                          onChange={(e) => setFilterCategory(e.target.value)}
+                          className={styles.categoryFilter}
+                        >
+                          <option value="">Wszystkie kategorie</option>
+                          {categories.map(category => (
+                            <option key={category} value={category}>{category}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {!activeSet ? (
+                      <div className={styles.noActiveSet}>
+                        <p>Wybierz zestaw fiszek z listy lub utwórz nowy zestaw.</p>
+                        <button
+                          className={styles.createSetPrompt}
+                          onClick={() => setShowCreateSetModal(true)}
+                        >
+                          Utwórz nowy zestaw
+                        </button>
+                      </div>
+                    ) : filteredFlashcards.length > 0 ? (
+                      <ul className={styles.cardGrid}>
+                        {filteredFlashcards.map(card => (
+                          <li key={card.id} className={styles.flashcardItem}>
+                            <div className={styles.cardHeader}>
+                              <span className={styles.cardCategory}>{card.category || 'Bez kategorii'}</span>
+                              <span className={`${styles.difficulty} ${styles[card.difficulty || 'medium']}`}>
+                                {card.difficulty === 'easy' ? 'Łatwa' :
+                                 card.difficulty === 'medium' ? 'Średnia' : 'Trudna'}
+                              </span>
+                            </div>
+                            <div className={styles.cardContent}>
+                              <div className={styles.cardFront}>{card.front || card.question || '(Brak pytania)'}</div>
+                              <div className={styles.cardBack}>{card.back || card.answer || '(Brak odpowiedzi)'}</div>
+                            </div>
+                            <div className={styles.cardFooter}>
+                              {card.tags?.length > 0 && (
+                                <div className={styles.cardTags}>
+                                  {card.tags.map(tag => (
+                                    <span key={tag} className={styles.tag}>#{tag}</span>
+                                  ))}
+                                </div>
+                              )}
+                              <button
+                                className={styles.deleteCardButton}
+                                onClick={() => deleteFlashcard(card.id)}
+                              >
+                                Usuń
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className={styles.noCards}>
+                        {searchTerm || filterCategory ?
+                          'Brak fiszek pasujących do kryteriów wyszukiwania.' :
+                          'Brak fiszek w tym zestawie. Dodaj pierwszą fiszkę!'}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'dodaj' && (
+                  <div className={styles.addFlashcard}>
+                    {!activeSet ? (
+                      <div className={styles.noActiveSet}>
+                        <p>Wybierz zestaw fiszek z listy lub utwórz nowy zestaw, aby dodać fiszkę.</p>
+                        <button
+                          className={styles.createSetPrompt}
+                          onClick={() => setShowCreateSetModal(true)}
+                        >
+                          Utwórz nowy zestaw
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className={styles.addOptions}>
+                          <button
+                            className={`${styles.optionButton} ${showEditor ? styles.active : ''}`}
+                            onClick={() => {
+                              setShowEditor(true);
+                              setShowGenerator(false);
+                            }}
+                          >
+                            Ręczne dodanie
+                          </button>
+                          <button
+                            className={`${styles.optionButton} ${showGenerator ? styles.active : ''}`}
+                            onClick={() => {
+                              setShowGenerator(true);
+                              setShowEditor(false);
+                            }}
+                          >
+                            Generuj automatycznie
+                          </button>
+                        </div>
+
+                        {showEditor && (
+                          <FlashcardEditor
+                            onSave={handleAddFlashcard}
+                            onCancel={() => setShowEditor(false)}
+                          />
+                        )}
+
+                        {showGenerator && (
+                          <AutoGenerator
+                            onGenerate={handleGenerateFlashcards}
+                            onCancel={() => setShowGenerator(false)}
+                          />
+                        )}
+
+                        {!showEditor && !showGenerator && (
+                          <div className={styles.addPrompt}>
+                            <p>Wybierz metodę dodawania fiszek powyżej.</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'nauka' && (
+                  <div className={styles.learnSection}>
+                    {!activeSet ? (
+                      <div className={styles.noActiveSet}>
+                        <p>Wybierz zestaw fiszek z listy lub utwórz nowy zestaw, aby rozpocząć naukę.</p>
+                        <button
+                          className={styles.createSetPrompt}
+                          onClick={() => setShowCreateSetModal(true)}
+                        >
+                          Utwórz nowy zestaw
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <h3>Gotowy do nauki?</h3>
+                        <p>Masz {stats.due} fiszek do powtórki w zestawie "{activeSet.name}".</p>
+
+                        <button
+                          className={styles.startLearningButton}
+                          onClick={startLearning}
+                          disabled={!activeSet || flashcards.length === 0}
+                        >
+                          Rozpocznij sesję nauki
+                        </button>
+
+                        <div className={styles.learningStats}>
+                          <div className={styles.progressContainer}>
+                            <h4>Postęp nauki</h4>
+                            <div className={styles.progressBar}>
+                              <div
+                                className={styles.progressFill}
+                                style={{ width: `${stats.total > 0 ? (stats.mastered / stats.total) * 100 : 0}%` }}
+                              ></div>
+                            </div>
+                            <span>Opanowane: {stats.total > 0 ? Math.round((stats.mastered / stats.total) * 100) : 0}%</span>
+                          </div>
+
+                          <div className={styles.learningSchedule}>
+                            <h4>Najbliższe powtórki</h4>
+                            {stats.due > 0 ? (
+                              <p>Masz {stats.due} fiszek czekających na powtórkę.</p>
+                            ) : (
+                              <p>Brak fiszek do powtórki. Wszystkie opanowane!</p>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === 'settings' && (
+                  <div className={styles.settingsTab}>
+                    <PersonalizationSettings
+                      userData={userData}
+                      onUpdate={(newSettings) => {
+                        setUserData(prev => ({...prev, ...newSettings}));
+                        showNotification('Ustawienia zapisane!');
+                      }}
+                    />
+
+                    {showShareManager && activeSet && (
+                      <div className={styles.shareSection}>
+                        <h3>Udostępnianie zestawu "{activeSet.name}"</h3>
+                        <ShareManager
+                          flashcardSetId={activeSet.id}
+                          onClose={() => setShowShareManager(false)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </main>
           </div>
-        </div>
+
+          {showCreateSetModal && (
+            <div className={styles.modalOverlay}>
+              <div className={styles.modal}>
+                <h3>Utwórz nowy zestaw fiszek</h3>
+                <div className={styles.formGroup}>
+                  <label>Nazwa zestawu</label>
+                  <input
+                    type="text"
+                    value={newSetName}
+                    onChange={(e) => setNewSetName(e.target.value)}
+                    placeholder="np. Angielski - poziom B2"
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label>Opis (opcjonalnie)</label>
+                  <textarea
+                    value={newSetDescription}
+                    onChange={(e) => setNewSetDescription(e.target.value)}
+                    placeholder="Krótki opis zestawu..."
+                  ></textarea>
+                </div>
+                <div className={styles.modalButtons}>
+                  <button
+                    className={styles.cancelButton}
+                    onClick={() => {
+                      setShowCreateSetModal(false);
+                      setNewSetName('');
+                      setNewSetDescription('');
+                    }}
+                  >
+                    Anuluj
+                  </button>
+                  <button
+                    className={styles.createButton}
+                    onClick={createFlashcardSet}
+                    disabled={!newSetName.trim()}
+                  >
+                    Utwórz zestaw
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
