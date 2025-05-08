@@ -2,14 +2,12 @@ import os
 import django
 import pytest
 
-# Konfiguracja Django - musi być przed importami modeli
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoProject1.settings')
 django.setup()
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from users.models import User
 
-# Fixtures dla testów
 @pytest.fixture
 def user_data():
     return {

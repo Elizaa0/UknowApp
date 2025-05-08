@@ -69,3 +69,146 @@
     gap: 10px;
   }
 }
+.categorySelection {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.customCategoryInput {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.addCategoryButton {
+  padding: 8px 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.addCategoryButton:hover {
+  background-color: #45a049;
+}
+.editorForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.formRow .formGroup {
+  flex: 1;
+}
+
+label {
+  font-weight: 500;
+  color: #333;
+}
+
+input, textarea, select {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.errorInput {
+  border-color: #e74c3c;
+}
+
+.errorText {
+  color: #e74c3c;
+  font-size: 0.85rem;
+}
+
+.categoryContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.newCategoryContainer {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.newCategoryContainer input {
+  flex: 1;
+}
+
+.addCategoryButton {
+  padding: 0 1rem;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.addCategoryButton:hover {
+  background-color: #2980b9;
+}
+
+.addCategoryButton:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.buttonGroup {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.saveButton {
+  padding: 0.75rem 1.5rem;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.saveButton:hover {
+  background-color: #27ae60;
+}
+
+.cancelButton {
+  padding: 0.75rem 1.5rem;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cancelButton:hover {
+  background-color: #c0392b;
+}

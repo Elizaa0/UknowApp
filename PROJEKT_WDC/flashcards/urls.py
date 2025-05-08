@@ -17,4 +17,3 @@ urlpatterns = [
     path('<int:pk>/update-status/', update_flashcard_status, name='update-flashcard-status'),
     path('<int:pk>/status/', update_flashcard_status, name='update-flashcard-status-alt'),
 ]
-

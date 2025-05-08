@@ -24,10 +24,8 @@ class UserAuthTests(APITestCase):
         self.assertEqual(User.objects.first().username, 'testuser')
 
     def test_user_login(self):
-        # Najpierw tworzymy użytkownika
         User.objects.create_user(**self.user_data)
 
-        # Test logowania
         response = self.client.post(self.login_url, {
             'username': self.user_data['username'],
             'password': self.user_data['password']
@@ -37,20 +35,16 @@ class UserAuthTests(APITestCase):
         self.assertIn('refresh', response.data)
 
     def test_get_current_user_authenticated(self):
-        # Tworzenie i logowanie użytkownika
         user = User.objects.create_user(**self.user_data)
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
-        # Ustawienie nagłówka autoryzacji
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
 
-        # Test endpointu /me/
         response = self.client.get(self.me_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], 'testuser')
 
     def test_get_current_user_unauthenticated(self):
-        # Test bez autentykacji
         response = self.client.get(self.me_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
