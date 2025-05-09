@@ -7,6 +7,9 @@ import HomePage from './Homepage';
 import Dashboard from './Dashboard';
 import LearningSession from './LearningSession';
 import SharedFlashcards from './SharedFlashcards';
+import TwoFactorAuth from './TwoFactorAuth';
+import TwoFactorSetup from './TwoFactorSetup';
+
 
 function App() {
   return (
@@ -16,6 +19,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+            <Route path="/2fa-verify" element={<TwoFactorAuth />} />
+            <Route path="/2fa-setup" element={<TwoFactorSetup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/learn/:setId" element={<LearningSession />} />
           <Route path="/shared/:token" element={<SharedFlashcards />} />
