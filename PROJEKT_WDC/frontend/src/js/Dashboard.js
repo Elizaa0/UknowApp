@@ -271,57 +271,56 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddFlashcard = async (newFlashcard) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token || !activeSet) {
-        throw new Error('Brak tokenu lub aktywnego zestawu');
-      }
-
-      const flashcardData = {
-        front: newFlashcard.front,
-        back: newFlashcard.back,
-        difficulty: newFlashcard.difficulty,
-        question: newFlashcard.front,
-        answer: newFlashcard.back,
-        ...(newFlashcard.category && { category: newFlashcard.category }),
-        ...(newFlashcard.tags?.length > 0 && { tags_ids: newFlashcard.tags })
-      };
-
-      const response = await fetch(
-        `http://localhost:8000/api/flashcards/sets/${activeSet.id}/cards/`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(flashcardData)
-        }
-      );
-
-      if (response.status === 401) {
-        localStorage.removeItem('token');
-        navigate('/login');
-        throw new Error('Sesja wygasła, zaloguj się ponownie');
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Błąd podczas dodawania fiszki');
-      }
-
-      const data = await response.json();
-      setFlashcards(prev => [...prev, data]);
-      updateStats([...flashcards, data]);
-      showNotification('Fiszka została dodana!');
-      setShowEditor(false);
-    } catch (error) {
-      console.error('Błąd:', error);
-      showNotification(error.message, 'error');
+ const handleAddFlashcard = async (newFlashcard) => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token || !activeSet) {
+      throw new Error('Brak tokenu lub aktywnego zestawu');
     }
-  };
 
+    const flashcardData = {
+      front: newFlashcard.front,
+      back: newFlashcard.back,
+      difficulty: newFlashcard.difficulty,
+      question: newFlashcard.front,
+      answer: newFlashcard.back,
+      category: newFlashcard.category || 'Bez kategorii', // Dodaj kategorię
+      ...(newFlashcard.tags?.length > 0 && { tags_ids: newFlashcard.tags })
+    };
+
+    const response = await fetch(
+      `http://localhost:8000/api/flashcards/sets/${activeSet.id}/cards/`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(flashcardData)
+      }
+    );
+
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      navigate('/login');
+      throw new Error('Sesja wygasła, zaloguj się ponownie');
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Błąd podczas dodawania fiszki');
+    }
+
+    const data = await response.json();
+    setFlashcards(prev => [...prev, data]);
+    updateStats([...flashcards, data]);
+    showNotification('Fiszka została dodana!');
+    setShowEditor(false);
+  } catch (error) {
+    console.error('Błąd:', error);
+    showNotification(error.message, 'error');
+  }
+};
   const handleGenerateFlashcards = async (generatedFlashcards) => {
     if (!activeSet) {
       showNotification('Wybierz lub utwórz zestaw fiszek!', 'error');
@@ -797,6 +796,7 @@ const Dashboard = () => {
                           <FlashcardEditor
                             onSave={handleAddFlashcard}
                             onCancel={() => setShowEditor(false)}
+                            existingCategories={categories}
                           />
                         )}
 
