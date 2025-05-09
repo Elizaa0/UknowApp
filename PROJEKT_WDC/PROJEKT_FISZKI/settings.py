@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'users',
     'corsheaders',
-    'flashcards',
     'django_otp',
     'django_otp.plugins.otp_totp',
 ]
