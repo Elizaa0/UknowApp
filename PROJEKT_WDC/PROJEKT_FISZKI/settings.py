@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'users',
     'corsheaders',
-    'flashcards'
+    'flashcards',
+    'django_otp',
+    'django_otp.plugins.otp_totp',
 ]
 
 MIDDLEWARE = [
@@ -52,8 +54,16 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django_otp.middleware.OTPMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
 ]
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+}
 ROOT_URLCONF = 'PROJEKT_FISZKI.urls'
 
 TEMPLATES = [

@@ -1,0 +1,135 @@
+/* Spójne tło z loginem */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #bab1ff 50%, #b1c3ff 55%);
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Karta - identyczna jak w loginie */
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+  padding: 40px;
+  width: 100%;
+  max-width: 450px;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #2c3e50;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+/* Przyciski - identyczne jak w loginie */
+.verifyButton, .submitButton, .resendButton {
+  background: linear-gradient(to right, #646cff, #7b64ff);
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.verifyButton:hover, .submitButton:hover, .resendButton:hover {
+  background: linear-gradient(to right, #535bf2, #6a53f2);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(100, 108, 255, 0.3);
+}
+
+.verifyButton:disabled, .submitButton:disabled, .resendButton:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Input - identyczny jak w loginie */
+.input {
+  padding: 14px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #646cff;
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.2);
+}
+
+.inputError {
+  border-color: #ff4757 !important;
+}
+
+/* Komunikaty błędów */
+.errorAlert {
+  background-color: #ffecec;
+  border: 2px solid #ffdbdb;
+  color: #ff4757;
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Kod QR */
+.qrImage {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 25px;
+  display: block;
+  border: 1px solid #eee;
+  padding: 10px;
+  background: white;
+}
+
+/* Sekcje */
+.qrSection {
+  text-align: center;
+}
+
+.header {
+  margin-bottom: 25px;
+}
+
+.subtitle {
+  color: #7f8c8d;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Loader */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loadingContainer {
+  text-align: center;
+  padding: 20px;
+}
