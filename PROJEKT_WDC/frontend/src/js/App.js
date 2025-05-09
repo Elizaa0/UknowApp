@@ -10,7 +10,6 @@ import SharedFlashcards from './SharedFlashcards';
 import TwoFactorAuth from './TwoFactorAuth';
 import TwoFactorSetup from './TwoFactorSetup';
 
-
 function App() {
   return (
     <ErrorBoundary>
