@@ -44,13 +44,11 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         username = request.data.get("username")
         user = User.objects.filter(username=username).first()
 
-        # 1. Sprawdź blokadę przed autoryzacją
         if user and user.is_locked_out():
             return Response({
                 'detail': f'Konto zablokowane do {localtime(user.lockout_until).strftime("%Y-%m-%d %H:%M:%S")}'
             }, status=status.HTTP_403_FORBIDDEN)
 
-        # 2. Zweryfikuj dane logowania ręcznie (bez super().post())
         serializer = self.get_serializer(data=request.data)
 
         try:
@@ -63,11 +61,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 user.save()
             return Response({'detail': 'Nieprawidłowe dane logowania.'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # 3. Udane logowanie
         user = serializer.user
         user.reset_failed_attempts()
 
-        # 4. Utwórz token
         refresh = RefreshToken.for_user(user)
 
         response_data = {

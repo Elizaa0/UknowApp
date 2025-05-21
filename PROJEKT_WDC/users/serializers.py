@@ -45,7 +45,7 @@ class TwoFactorAuthSerializer(serializers.Serializer):
 class TwoFactorSetupSerializer(serializers.ModelSerializer):
     qr_code = serializers.SerializerMethodField()
     manual_code = serializers.SerializerMethodField()
-    provisioning_uri = serializers.SerializerMethodField()  # Dodajemy to
+    provisioning_uri = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -66,7 +66,6 @@ class TwoFactorSetupSerializer(serializers.ModelSerializer):
         try:
             uri = self.get_provisioning_uri(obj)
 
-            # Poprawione generowanie QR
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -78,7 +77,6 @@ class TwoFactorSetupSerializer(serializers.ModelSerializer):
 
             img = qr.make_image(fill_color="black", back_color="white")
 
-            # Zwiększona jakość obrazu
             buffered = BytesIO()
             img.save(buffered, format="PNG", quality=100)
             img_str = base64.b64encode(buffered.getvalue()).decode()
