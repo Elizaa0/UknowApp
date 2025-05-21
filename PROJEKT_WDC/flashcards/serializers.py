@@ -24,7 +24,6 @@ class FlashcardStatusSerializer(serializers.ModelSerializer):
 class FlashcardSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, required=False, read_only=True)
     category = CategorySerializer(required=False, read_only=True)
-    # Dodaj pola do zapisu ID zamiast pełnych obiektów
     tags_ids = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Tag.objects.all(),

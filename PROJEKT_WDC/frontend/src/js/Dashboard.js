@@ -284,7 +284,7 @@ const Dashboard = () => {
       difficulty: newFlashcard.difficulty,
       question: newFlashcard.front,
       answer: newFlashcard.back,
-      category: newFlashcard.category || 'Bez kategorii', // Dodaj kategorię
+      category: newFlashcard.category || 'Brak kategorii',
       ...(newFlashcard.tags?.length > 0 && { tags_ids: newFlashcard.tags })
     };
 

@@ -27,12 +27,10 @@ const FlashcardEditor = ({ onSave, initialData }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Walidacja formularza
     if (!validateForm()) {
       return;
     }
 
-    // Przekształcenie tagów na tablicę i usunięcie pustych elementów
     const tagsArray = tags
       .split(',')
       .map(tag => tag.trim())
@@ -44,12 +42,10 @@ const FlashcardEditor = ({ onSave, initialData }) => {
       category,
       difficulty,
       tags: tagsArray,
-      // Dodajemy pola wymagane przez backend
       question: front,
       answer: back
     });
 
-    // Opcjonalnie: Zresetuj formularz po zapisaniu
     setFront('');
     setBack('');
     setCategory('Programowanie');

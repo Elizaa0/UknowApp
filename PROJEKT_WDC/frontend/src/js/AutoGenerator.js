@@ -19,12 +19,10 @@ const AutoGenerator = ({ onGenerate }) => {
       let content = text;
 
       if (mode === 'file' && file) {
-        // Tutaj dodaj logikę przetwarzania pliku
-        // Można użyć FileReader do odczytu tekstu z pliku
+
         content = await readFileContent(file);
       }
 
-      // Wywołaj API do generowania fiszek
       const response = await fetch('http://localhost:8000/api/generate-flashcards/', {
         method: 'POST',
         headers: {

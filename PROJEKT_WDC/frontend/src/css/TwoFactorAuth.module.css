@@ -1,4 +1,3 @@
-/* Spójne tło z loginem */
 .container {
   display: flex;
   justify-content: center;
@@ -9,7 +8,6 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Karta - identyczna jak w loginie */
 .card {
   background: white;
   border-radius: 12px;
@@ -27,7 +25,6 @@
   font-weight: 600;
 }
 
-/* Przyciski - identyczne jak w loginie */
 .verifyButton, .submitButton, .resendButton {
   background: linear-gradient(to right, #646cff, #7b64ff);
   color: white;
@@ -55,7 +52,6 @@
   box-shadow: none !important;
 }
 
-/* Input - identyczny jak w loginie */
 .input {
   padding: 14px 16px;
   border: 2px solid #e0e0e0;
@@ -75,7 +71,6 @@
   border-color: #ff4757 !important;
 }
 
-/* Komunikaty błędów */
 .errorAlert {
   background-color: #ffecec;
   border: 2px solid #ffdbdb;
@@ -87,7 +82,6 @@
   font-weight: 500;
 }
 
-/* Kod QR */
 .qrImage {
   width: 200px;
   height: 200px;
@@ -98,7 +92,6 @@
   background: white;
 }
 
-/* Sekcje */
 .qrSection {
   text-align: center;
 }
@@ -113,7 +106,6 @@
   margin-top: 10px;
 }
 
-/* Loader */
 .spinner {
   display: inline-block;
   width: 20px;

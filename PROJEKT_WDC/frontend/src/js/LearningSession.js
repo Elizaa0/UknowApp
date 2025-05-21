@@ -1,5 +1,3 @@
-// Poprawki do komponentu LearningSession.js
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from '../css/LearningSession.module.css';
@@ -20,7 +18,6 @@ const LearningSession = () => {
   const [error, setError] = useState(null);
   const [setInfo, setSetInfo] = useState(null);
 
-  // Pobieranie danych zestawu
   const fetchSetInfo = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -46,7 +43,6 @@ const LearningSession = () => {
     }
   }, [setId, navigate]);
 
-  // Pobieranie fiszek dla sesji nauki
   const fetchFlashcards = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -67,7 +63,6 @@ const LearningSession = () => {
       const data = await response.json();
       console.log('Pobrane fiszki do nauki:', data);
 
-      // Upewnij się, że każda fiszka ma potrzebne pola
       const processedCards = Array.isArray(data) ? data.map(card => ({
         ...card,
         front: card.front || card.question || '',
@@ -75,7 +70,6 @@ const LearningSession = () => {
         category: card.category || 'Bez kategorii',
       })) : [];
 
-      // Losujemy kolejność kart
       const shuffledCards = [...processedCards].sort(() => Math.random() - 0.5);
 
       setFlashcards(shuffledCards);
@@ -98,24 +92,19 @@ const LearningSession = () => {
     fetchFlashcards();
   }, [setId, navigate, fetchSetInfo, fetchFlashcards]);
 
-  // Obsługa odpowiedzi
   const handleAnswer = (isCorrect) => {
-    // Aktualizuj stan karty w API (opcjonalnie)
     updateCardProgress(flashcards[currentIndex].id, isCorrect);
 
-    // Aktualizuj statystyki sesji
     setSessionStats(prev => ({
       ...prev,
       correct: isCorrect ? prev.correct + 1 : prev.correct,
       incorrect: !isCorrect ? prev.incorrect + 1 : prev.incorrect
     }));
 
-    // Przejdź do następnej karty lub zakończ sesję
     if (currentIndex < flashcards.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setIsFlipped(false);
     } else {
-      // Sesja zakończona
       finishSession();
     }
   };
@@ -141,7 +130,6 @@ const LearningSession = () => {
   };
 
   const finishSession = () => {
-    // Przekieruj do pulpitu z informacją o zakończeniu sesji
     navigate('/dashboard', {
       state: {
         sessionCompleted: true,
@@ -150,7 +138,6 @@ const LearningSession = () => {
     });
   };
 
-  // Obsługa błędów i ładowania
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -190,7 +177,6 @@ const LearningSession = () => {
     );
   }
 
-  // Renderowanie sesji nauki
   const currentCard = flashcards[currentIndex];
 
   return (

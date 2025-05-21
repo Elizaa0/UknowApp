@@ -1,4 +1,3 @@
-// PersonalizationSettings.js
 import React, { useState, useEffect } from 'react';
 import styles from '../css/PersonalizationSettings.module.css';
 
@@ -21,7 +20,6 @@ const PersonalizationSettings = () => {
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    // Wczytaj zapisane ustawienia
     const savedSettings = localStorage.getItem('appSettings');
     if (savedSettings) {
       const { theme, layout, fontSize: savedFontSize } = JSON.parse(savedSettings);
@@ -45,13 +43,10 @@ const PersonalizationSettings = () => {
   };
 
   const applySettings = (settings) => {
-    // Zastosuj ustawienia do całej aplikacji
     const theme = themes.find(t => t.id === settings.theme) || themes[0];
     document.documentElement.style.setProperty('--primary-color', theme.colors.primary);
     document.documentElement.style.setProperty('--secondary-color', theme.colors.secondary);
     document.documentElement.style.setProperty('--base-font-size', `${settings.fontSize}px`);
-
-    // Dodaj klasę układu do body
     document.body.classList.remove('layout-grid', 'layout-list', 'layout-cards');
     document.body.classList.add(`layout-${settings.layout}`);
   };

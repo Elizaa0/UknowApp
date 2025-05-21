@@ -113,14 +113,13 @@ class FlashcardsBySetView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-# Przeniesiona na zewnątrz klasy i poprawiona funkcja
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update_flashcard_status(request, pk):
     try:
         flashcard = Flashcard.objects.get(
             pk=pk,
-            flashcard_set__owner=request.user  # Poprawione - sprawdzamy właściciela zestawu
+            flashcard_set__owner=request.user
         )
     except Flashcard.DoesNotExist:
         return Response(

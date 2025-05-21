@@ -117,7 +117,6 @@ class Flashcard(models.Model):
         return f'Q: {self.question[:30]}... (A: {self.answer[:30]}...)'
 
     def save(self, *args, **kwargs):
-        # Automatyczna aktualizacja daty następnej powtórki przy zmianie statusu
         if self.status == 'mastered' and self.due_date is not None:
             self.due_date = None
         elif self.status == 'learning' and self.due_date is None:

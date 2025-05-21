@@ -105,8 +105,6 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -114,6 +112,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+        'min_length': 12,
+    }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -127,7 +128,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'users.password_hashers.LessMemoryArgon2',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
@@ -136,7 +137,7 @@ PASSWORD_HASHERS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
 }
 
 SIMPLE_JWT = {
@@ -145,12 +146,9 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Warsaw'
 
 USE_I18N = True
 

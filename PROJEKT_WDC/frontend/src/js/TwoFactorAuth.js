@@ -106,7 +106,6 @@ function TwoFactorAuth() {
       setError(err.message);
     }
   };
-  // ... (importy pozostają bez zmian)
 
   return (
     <div className={styles.container}>
