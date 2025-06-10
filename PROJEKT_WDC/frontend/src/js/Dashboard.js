@@ -95,15 +95,6 @@ const Dashboard = () => {
   }, [activeSet]);
 
   const updateStats = useCallback((cards) => {
-    const mastered = cards.filter(card => card.status === 'mastered').length;
-    const due = cards.filter(card =>
-      card.status === 'learning' &&
-      isDue(card.due_date)
-    ).length;
-    const learning = cards.filter(card =>
-      card.status === 'learning' &&
-      !isDue(card.due_date)
-    ).length;
     // Ensure cards is an array
     const cardsArray = Array.isArray(cards) ? cards : [cards];
 
@@ -113,19 +104,12 @@ const Dashboard = () => {
       isDue(card.due_date)
     ).length;
     const learning = cardsArray.filter(card =>
-      card.status !== 'mastered' &&
+      card.status === 'learning' &&
       !isDue(card.due_date)
     ).length;
 
     setStats({
       total: cards.length,
-      mastered,
-      due,
-      learning
-    });
-  }, []);
-    setStats({
-      total: cardsArray.length,
       mastered,
       due,
       learning
@@ -235,8 +219,6 @@ const Dashboard = () => {
       const updatedFlashcards = flashcards.map((card, idx) =>
         idx === currentCardIndex ? { ...card, ...updatedCard } : card
       );
-
-      await updateFlashcardStatus(currentCard.id, isCorrect);
 
       setFlashcards(updatedFlashcards);
       updateStats(updatedFlashcards);
@@ -361,76 +343,25 @@ const Dashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const newCards = [];
-      let skippedCards = 0;
+      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${activeSet.id}/generate/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: generatedFlashcards.content })
+      });
 
-      console.log('Otrzymane fiszki:', generatedFlashcards);
+      if (!response.ok) throw new Error('Błąd podczas generowania fiszek');
+      const data = await response.json();
 
-      // Add each flashcard one by one
-      for (const card of generatedFlashcards) {
-        // Ensure question and answer meet minimum length requirements
-        const question = (card.front || card.question || '').trim();
-        const answer = (card.back || card.answer || '').trim();
-
-        console.log('Przetwarzanie fiszki:', { question, answer });
-
-        if (question.length < 3) {
-          console.warn('Pytanie jest za krótkie:', { question, length: question.length });
-          skippedCards++;
-          continue;
-        }
-
-        if (answer.length < 2) {
-          console.warn('Odpowiedź jest za krótka:', { answer, length: answer.length });
-          skippedCards++;
-          continue;
-        }
-
-        const flashcardData = {
-          question: question,
-          answer: answer,
-          difficulty: card.difficulty || 'medium',
-          flashcard_set: activeSet.id
-        };
-
-        console.log('Wysyłam fiszkę:', flashcardData);
-
-        const response = await fetch(`http://localhost:8000/api/flashcards/sets/${activeSet.id}/cards/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(flashcardData)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Błąd dodawania fiszki:', {
-            status: response.status,
-            statusText: response.statusText,
-            error: errorData,
-            sentData: flashcardData
-          });
-          skippedCards++;
-          continue;
-        }
-
-        const data = await response.json();
-        console.log('Dodano fiszkę:', data);
-        newCards.push(data);
-      }
-
-      if (newCards.length > 0) {
-        setFlashcards(prevCards => [...prevCards, ...newCards]);
-        updateStats([...flashcards, ...newCards]);
-        showNotification(`Dodano ${newCards.length} nowych fiszek${skippedCards > 0 ? ` (${skippedCards} pominięto)` : ''}`, 'success');
-      } else {
-        showNotification('Nie dodano żadnych fiszek. Upewnij się, że pytania mają minimum 10 znaków, a odpowiedzi minimum 5 znaków.', 'warning');
-      }
+      setFlashcards(prev => [...prev, ...data.cards]);
+      updateStats([...flashcards, ...data.cards]);
+      setShowGenerator(false);
+      showNotification(`Wygenerowano ${data.cards.length} nowych fiszek!`);
     } catch (error) {
-      console.error('Błąd podczas dodawania fiszek:', error);
-      showNotification('Wystąpił błąd podczas dodawania fiszek', 'error');
+      console.error('Błąd:', error);
+      showNotification('Nie udało się wygenerować fiszek.', 'error');
     }
   };
 
