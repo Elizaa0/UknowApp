@@ -9,6 +9,7 @@ import LearningSession from './LearningSession';
 import SharedFlashcards from './SharedFlashcards';
 import TwoFactorAuth from './TwoFactorAuth';
 import TwoFactorSetup from './TwoFactorSetup';
+import PublicShare from './PublicShare';
 
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/learn/:setId" element={<LearningSession />} />
           <Route path="/shared/:token" element={<SharedFlashcards />} />
+          <Route path="/share/:uuid" element={<PublicShare />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>

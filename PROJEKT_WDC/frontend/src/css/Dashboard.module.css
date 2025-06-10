@@ -942,39 +942,62 @@
 }
 
 .answerButtons {
-  display: flex;
-  gap: 1.5rem;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 2rem;
 }
 
-.incorrectButton {
-  background: linear-gradient(to right, #e74c3c, #c0392b);
-  color: white;
-  padding: 1rem 2rem;
+.qualityButton {
+  padding: 1rem;
   border: none;
   border-radius: 8px;
-  font-size: 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(231, 76, 60, 0.2);
+  background: white;
+  color: #2c3e50;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.correctButton {
-  background: linear-gradient(to right, #2ecc71, #27ae60);
+.qualityButton:nth-child(1) {
+  background: #ff4757;
   color: white;
-  padding: 1rem 2rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(46, 204, 113, 0.2);
 }
 
-.incorrectButton:hover,
-.correctButton:hover {
+.qualityButton:nth-child(2) {
+  background: #ff6b81;
+  color: white;
+}
+
+.qualityButton:nth-child(3) {
+  background: #ffa502;
+  color: white;
+}
+
+.qualityButton:nth-child(4) {
+  background: #2ed573;
+  color: white;
+}
+
+.qualityButton:nth-child(5) {
+  background: #1e90ff;
+  color: white;
+}
+
+.qualityButton:nth-child(6) {
+  background: #5352ed;
+  color: white;
+}
+
+.qualityButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.qualityButton:active {
+  transform: translateY(0);
 }
 
 .progressContainer {
@@ -1217,4 +1240,123 @@ progress::-webkit-progress-value {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.statsContainer {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.statItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.statLabel {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.statValue.mastered {
+  color: #2ed573;
+}
+
+.statValue.due {
+  color: #ff4757;
+}
+
+.statValue.learning {
+  color: #1e90ff;
+}
+
+.scheduleTab {
+  margin-top: 2rem;
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.scheduleTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+}
+
+.scheduleTable th, .scheduleTable td {
+  padding: 1rem;
+  border-bottom: 1px solid #e0e6ed;
+  text-align: left;
+}
+
+.scheduleTable th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.scheduleTable tr:last-child td {
+  border-bottom: none;
+}
+
+.publicSwitch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  margin-right: 1rem;
+}
+
+.shareInput {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #e0e6ed;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.copyButton {
+  background: linear-gradient(to right, #646cff, #7b64ff);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+.copyButton:hover {
+  background: #7b64ff;
+}
+
+.shareError {
+  color: #ff4757;
+  font-weight: 500;
+  margin-bottom: 1rem;
 }

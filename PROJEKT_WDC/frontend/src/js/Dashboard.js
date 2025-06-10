@@ -35,6 +35,9 @@ const Dashboard = () => {
     correct: 0,
     incorrect: 0
   });
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareLink, setShareLink] = useState('');
+  const [shareError, setShareError] = useState('');
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -92,23 +95,23 @@ const Dashboard = () => {
   }, [activeSet]);
 
   const updateStats = useCallback((cards) => {
-  const mastered = cards.filter(card => card.status === 'mastered').length;
-  const due = cards.filter(card =>
-    card.status === 'learning' &&
-    isDue(card.due_date)
-  ).length;
-  const learning = cards.filter(card =>
-    card.status !== 'mastered' &&
-    !isDue(card.due_date)
-  ).length;
+    const mastered = cards.filter(card => card.status === 'mastered').length;
+    const due = cards.filter(card =>
+      card.status === 'learning' &&
+      isDue(card.due_date)
+    ).length;
+    const learning = cards.filter(card =>
+      card.status === 'learning' &&
+      !isDue(card.due_date)
+    ).length;
 
-  setStats({
-    total: cards.length,
-    mastered,
-    due,
-    learning
-  });
-}, []);
+    setStats({
+      total: cards.length,
+      mastered,
+      due,
+      learning
+    });
+  }, []);
 
   const fetchFlashcards = useCallback(async (setId) => {
     try {
@@ -184,27 +187,35 @@ const Dashboard = () => {
     setLearningProgress({ correct: 0, incorrect: 0 });
   };
 
-  const handleLearningResponse = async (isCorrect) => {
+  const handleLearningResponse = async (quality) => {
     try {
       const currentCard = flashcards[currentCardIndex];
       if (!currentCard) throw new Error('Brak aktualnej fiszki');
 
       setLearningProgress(prev => ({
-        correct: isCorrect ? prev.correct + 1 : prev.correct,
-        incorrect: !isCorrect ? prev.incorrect + 1 : prev.incorrect
+        correct: quality >= 3 ? prev.correct + 1 : prev.correct,
+        incorrect: quality < 3 ? prev.incorrect + 1 : prev.incorrect
       }));
 
-      const updatedCard = {
-        ...currentCard,
-        status: isCorrect ? 'mastered' : 'learning',
-        due_date: isCorrect ? null : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-      };
-
-      const updatedFlashcards = flashcards.map((card, idx) =>
-        idx === currentCardIndex ? updatedCard : card
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `http://localhost:8000/api/flashcards/${currentCard.id}/update-status/`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ quality })
+        }
       );
 
-      await updateFlashcardStatus(currentCard.id, isCorrect);
+      if (!response.ok) throw new Error('Błąd aktualizacji statusu fiszki');
+      const updatedCard = await response.json();
+
+      const updatedFlashcards = flashcards.map((card, idx) =>
+        idx === currentCardIndex ? { ...card, ...updatedCard } : card
+      );
 
       setFlashcards(updatedFlashcards);
       updateStats(updatedFlashcards);
@@ -217,17 +228,17 @@ const Dashboard = () => {
       }
 
       showNotification(
-        isCorrect
+        quality >= 3
           ? 'Dobra odpowiedź! Fiszka oznaczona jako opanowana.'
-          : 'Fiszka wymaga powtórki. Wrócimy do niej jutro.',
-        isCorrect ? 'success' : 'info'
+          : 'Fiszka wymaga powtórki. Wrócimy do niej wkrótce.',
+        quality >= 3 ? 'success' : 'info'
       );
 
     } catch (error) {
       console.error('Błąd:', error);
       setLearningProgress(prev => ({
-        correct: isCorrect ? prev.correct - 1 : prev.correct,
-        incorrect: !isCorrect ? prev.incorrect - 1 : prev.incorrect
+        correct: quality >= 3 ? prev.correct - 1 : prev.correct,
+        incorrect: quality < 3 ? prev.incorrect - 1 : prev.incorrect
       }));
       showNotification('Nie udało się zapisać odpowiedzi. Spróbuj ponownie.', 'error');
     }
@@ -419,6 +430,36 @@ const Dashboard = () => {
 
   const categories = [...new Set(flashcards.map(card => card.category || 'Bez kategorii'))];
 
+  const handleTogglePublic = async (set) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${set.id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ is_public: !set.is_public })
+      });
+      if (!response.ok) throw new Error('Błąd zmiany statusu publiczności');
+      await fetchFlashcardSets();
+      showNotification('Zmieniono status publiczności zestawu!');
+    } catch (error) {
+      showNotification('Nie udało się zmienić statusu publiczności', 'error');
+    }
+  };
+
+  const handleShareSet = (set) => {
+    if (!set.is_public) {
+      setShareError('Aby udostępnić zestaw, ustaw go jako publiczny.');
+      setShowShareModal(true);
+      return;
+    }
+    setShareLink(`${window.location.origin}/share/${set.share_uuid}`);
+    setShareError('');
+    setShowShareModal(true);
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -512,16 +553,40 @@ const Dashboard = () => {
                 ) : (
                   <div className={styles.answerButtons}>
                     <button
-                      className={styles.incorrectButton}
-                      onClick={() => handleLearningResponse(false)}
+                      className={styles.qualityButton}
+                      onClick={() => handleLearningResponse(0)}
                     >
-                      Źle odpowiedziałem
+                      Zupełnie nie pamiętałem
                     </button>
                     <button
-                      className={styles.correctButton}
-                      onClick={() => handleLearningResponse(true)}
+                      className={styles.qualityButton}
+                      onClick={() => handleLearningResponse(1)}
                     >
-                      Dobrze odpowiedziałem
+                      Pamiętałem z trudem
+                    </button>
+                    <button
+                      className={styles.qualityButton}
+                      onClick={() => handleLearningResponse(2)}
+                    >
+                      Pamiętałem z trudnością
+                    </button>
+                    <button
+                      className={styles.qualityButton}
+                      onClick={() => handleLearningResponse(3)}
+                    >
+                      Pamiętałem
+                    </button>
+                    <button
+                      className={styles.qualityButton}
+                      onClick={() => handleLearningResponse(4)}
+                    >
+                      Pamiętałem dobrze
+                    </button>
+                    <button
+                      className={styles.qualityButton}
+                      onClick={() => handleLearningResponse(5)}
+                    >
+                      Pamiętałem perfekcyjnie
                     </button>
                   </div>
                 )}
@@ -595,19 +660,29 @@ const Dashboard = () => {
                     >
                       <span className={styles.setName}>{set.name}</span>
                       <div className={styles.setActions}>
+                        <label className={styles.publicSwitch}>
+                          <input
+                            type="checkbox"
+                            checked={set.is_public}
+                            onChange={e => {
+                              e.stopPropagation();
+                              handleTogglePublic(set);
+                            }}
+                          />
+                          <span>Publiczny</span>
+                        </label>
                         <button
                           className={styles.shareButton}
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
-                            setActiveSet(set);
-                            setShowShareManager(true);
+                            handleShareSet(set);
                           }}
                         >
                           Udostępnij
                         </button>
                         <button
                           className={styles.deleteButton}
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             deleteFlashcardSet(set.id);
                           }}
@@ -631,25 +706,6 @@ const Dashboard = () => {
                 </div>
               )}
 
-              <div className={styles.statsGrid}>
-                <div className={styles.statCard}>
-                  <h3>Wszystkie fiszki</h3>
-                  <p>{stats.total}</p>
-                </div>
-                <div className={styles.statCard}>
-                  <h3>Opanowane</h3>
-                  <p>{stats.mastered}</p>
-                </div>
-                <div className={styles.statCard}>
-                  <h3>W trakcie nauki</h3>
-                  <p>{stats.learning}</p>
-                </div>
-                <div className={styles.statCard}>
-                  <h3>Do powtórki</h3>
-                  <p>{stats.due}</p>
-                </div>
-              </div>
-
               <div className={styles.tabs}>
                 <button
                   className={`${styles.tabButton} ${activeTab === 'fiszki' ? styles.active : ''}`}
@@ -671,6 +727,12 @@ const Dashboard = () => {
                   Rozpocznij naukę
                 </button>
                 <button
+                  className={`${styles.tabButton} ${activeTab === 'schedule' ? styles.active : ''}`}
+                  onClick={() => setActiveTab('schedule')}
+                >
+                  Harmonogram powtórek
+                </button>
+                <button
                   className={`${styles.tabButton} ${activeTab === 'settings' ? styles.active : ''}`}
                   onClick={() => setActiveTab('settings')}
                 >
@@ -680,7 +742,26 @@ const Dashboard = () => {
 
               <div className={styles.tabContent}>
                 {activeTab === 'fiszki' && (
-                  <div className={styles.flashcardsList}>
+                  <div className={styles.flashcardsTab}>
+                    <div className={styles.statsContainer}>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>Wszystkie fiszki</span>
+                        <span className={styles.statValue}>{stats.total}</span>
+                      </div>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>Opanowane</span>
+                        <span className={`${styles.statValue} ${styles.mastered}`}>{stats.mastered}</span>
+                      </div>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>Do powtórki</span>
+                        <span className={`${styles.statValue} ${styles.due}`}>{stats.due}</span>
+                      </div>
+                      <div className={styles.statItem}>
+                        <span className={styles.statLabel}>W trakcie nauki</span>
+                        <span className={`${styles.statValue} ${styles.learning}`}>{stats.learning}</span>
+                      </div>
+                    </div>
+
                     <div className={styles.flashcardsHeader}>
                       <h3>Moje fiszki</h3>
                       <div className={styles.filters}>
@@ -868,6 +949,13 @@ const Dashboard = () => {
                   </div>
                 )}
 
+                {activeTab === 'schedule' && (
+                  <div className={styles.scheduleTab}>
+                    <h3>Harmonogram powtórek</h3>
+                    <ReviewSchedule flashcards={flashcards} />
+                  </div>
+                )}
+
                 {activeTab === 'settings' && (
                   <div className={styles.settingsTab}>
                     <PersonalizationSettings
@@ -936,10 +1024,79 @@ const Dashboard = () => {
               </div>
             </div>
           )}
+
+          {showShareModal && (
+            <div className={styles.modalOverlay}>
+              <div className={styles.modal}>
+                <h3>Udostępnij zestaw</h3>
+                {shareError ? (
+                  <p className={styles.shareError}>{shareError}</p>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      value={shareLink}
+                      readOnly
+                      className={styles.shareInput}
+                      onFocus={e => e.target.select()}
+                    />
+                    <button
+                      onClick={() => navigator.clipboard.writeText(shareLink)}
+                      className={styles.copyButton}
+                    >
+                      Kopiuj link
+                    </button>
+                  </>
+                )}
+                <button
+                  className={styles.cancelButton}
+                  onClick={() => setShowShareModal(false)}
+                >
+                  Zamknij
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
   );
 };
+
+function ReviewSchedule({ flashcards }) {
+  // Grupowanie fiszek według daty powtórki
+  const schedule = {};
+  flashcards.forEach(card => {
+    if (!card.next_review && !card.due_date) return;
+    const date = (card.next_review || card.due_date).slice(0, 10); // yyyy-mm-dd
+    if (!schedule[date]) schedule[date] = 0;
+    schedule[date]++;
+  });
+  // Posortuj daty rosnąco
+  const sortedDates = Object.keys(schedule).sort();
+
+  if (sortedDates.length === 0) {
+    return <p>Brak zaplanowanych powtórek.</p>;
+  }
+
+  return (
+    <table className={styles.scheduleTable}>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Liczba fiszek do powtórki</th>
+        </tr>
+      </thead>
+      <tbody>
+        {sortedDates.map(date => (
+          <tr key={date}>
+            <td>{date}</td>
+            <td>{schedule[date]}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
 export default Dashboard;

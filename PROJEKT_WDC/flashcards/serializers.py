@@ -17,8 +17,8 @@ class CategorySerializer(serializers.ModelSerializer):
 class FlashcardStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Flashcard
-        fields = ['id', 'status', 'due_date']
-        read_only_fields = ['id']
+        fields = ['id', 'status', 'due_date', 'repetitions', 'easiness', 'interval', 'last_reviewed', 'next_review']
+        read_only_fields = ['id', 'repetitions', 'easiness', 'interval', 'last_reviewed', 'next_review']
 
 
 class FlashcardSerializer(serializers.ModelSerializer):
@@ -41,6 +41,7 @@ class FlashcardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Flashcard
         fields = '__all__'
+        read_only_fields = ['repetitions', 'easiness', 'interval', 'last_reviewed', 'next_review']
         extra_kwargs = {
             'flashcard_set': {'write_only': True, 'required': False}
         }
