@@ -1,12 +1,18 @@
 from rest_framework import generics, permissions, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser
 from .models import FlashcardSet, Flashcard
 from .serializers import FlashcardSetSerializer, FlashcardSerializer, FlashcardStatusSerializer
 from django.shortcuts import get_object_or_404
+import PyPDF2
+from docx import Document
+import io
+import re
 
 
+# Twoje istniejące klasy views pozostają bez zmian
 class FlashcardSetListCreateView(generics.ListCreateAPIView):
     serializer_class = FlashcardSetSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -127,25 +133,6 @@ def update_flashcard_status(request, pk):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    # Check if quality rating is provided
-    quality = request.data.get('quality')
-    if quality is not None:
-        try:
-            quality = int(quality)
-            if not 0 <= quality <= 5:
-                return Response(
-                    {'message': 'Ocena musi być liczbą od 0 do 5'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            flashcard.update_sm2(quality)
-            return Response(FlashcardStatusSerializer(flashcard).data)
-        except ValueError:
-            return Response(
-                {'message': 'Ocena musi być liczbą'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-    # If no quality rating, update status manually
     serializer = FlashcardStatusSerializer(
         flashcard,
         data=request.data,
@@ -160,13 +147,3 @@ def update_flashcard_status(request, pk):
         serializer.errors,
         status=status.HTTP_400_BAD_REQUEST
     )
-
-
-@api_view(['GET'])
-def public_flashcard_set(request, uuid):
-    try:
-        flashcard_set = FlashcardSet.objects.get(share_uuid=uuid, is_public=True)
-    except FlashcardSet.DoesNotExist:
-        return Response({'detail': 'Zestaw nie istnieje lub nie jest publiczny.'}, status=404)
-    serializer = FlashcardSetSerializer(flashcard_set)
-    return Response(serializer.data)

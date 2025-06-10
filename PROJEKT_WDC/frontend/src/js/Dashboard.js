@@ -104,9 +104,28 @@ const Dashboard = () => {
       card.status === 'learning' &&
       !isDue(card.due_date)
     ).length;
+    // Ensure cards is an array
+    const cardsArray = Array.isArray(cards) ? cards : [cards];
+
+    const mastered = cardsArray.filter(card => card.status === 'mastered').length;
+    const due = cardsArray.filter(card =>
+      card.status === 'learning' &&
+      isDue(card.due_date)
+    ).length;
+    const learning = cardsArray.filter(card =>
+      card.status !== 'mastered' &&
+      !isDue(card.due_date)
+    ).length;
 
     setStats({
       total: cards.length,
+      mastered,
+      due,
+      learning
+    });
+  }, []);
+    setStats({
+      total: cardsArray.length,
       mastered,
       due,
       learning
@@ -216,6 +235,8 @@ const Dashboard = () => {
       const updatedFlashcards = flashcards.map((card, idx) =>
         idx === currentCardIndex ? { ...card, ...updatedCard } : card
       );
+
+      await updateFlashcardStatus(currentCard.id, isCorrect);
 
       setFlashcards(updatedFlashcards);
       updateStats(updatedFlashcards);
@@ -340,25 +361,76 @@ const Dashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${activeSet.id}/generate/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ content: generatedFlashcards.content })
-      });
+      const newCards = [];
+      let skippedCards = 0;
 
-      if (!response.ok) throw new Error('Błąd podczas generowania fiszek');
-      const data = await response.json();
+      console.log('Otrzymane fiszki:', generatedFlashcards);
 
-      setFlashcards(prev => [...prev, ...data.cards]);
-      updateStats([...flashcards, ...data.cards]);
-      setShowGenerator(false);
-      showNotification(`Wygenerowano ${data.cards.length} nowych fiszek!`);
+      // Add each flashcard one by one
+      for (const card of generatedFlashcards) {
+        // Ensure question and answer meet minimum length requirements
+        const question = (card.front || card.question || '').trim();
+        const answer = (card.back || card.answer || '').trim();
+
+        console.log('Przetwarzanie fiszki:', { question, answer });
+
+        if (question.length < 3) {
+          console.warn('Pytanie jest za krótkie:', { question, length: question.length });
+          skippedCards++;
+          continue;
+        }
+
+        if (answer.length < 2) {
+          console.warn('Odpowiedź jest za krótka:', { answer, length: answer.length });
+          skippedCards++;
+          continue;
+        }
+
+        const flashcardData = {
+          question: question,
+          answer: answer,
+          difficulty: card.difficulty || 'medium',
+          flashcard_set: activeSet.id
+        };
+
+        console.log('Wysyłam fiszkę:', flashcardData);
+
+        const response = await fetch(`http://localhost:8000/api/flashcards/sets/${activeSet.id}/cards/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(flashcardData)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Błąd dodawania fiszki:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData,
+            sentData: flashcardData
+          });
+          skippedCards++;
+          continue;
+        }
+
+        const data = await response.json();
+        console.log('Dodano fiszkę:', data);
+        newCards.push(data);
+      }
+
+      if (newCards.length > 0) {
+        setFlashcards(prevCards => [...prevCards, ...newCards]);
+        updateStats([...flashcards, ...newCards]);
+        showNotification(`Dodano ${newCards.length} nowych fiszek${skippedCards > 0 ? ` (${skippedCards} pominięto)` : ''}`, 'success');
+      } else {
+        showNotification('Nie dodano żadnych fiszek. Upewnij się, że pytania mają minimum 10 znaków, a odpowiedzi minimum 5 znaków.', 'warning');
+      }
     } catch (error) {
-      console.error('Błąd:', error);
-      showNotification('Nie udało się wygenerować fiszek.', 'error');
+      console.error('Błąd podczas dodawania fiszek:', error);
+      showNotification('Wystąpił błąd podczas dodawania fiszek', 'error');
     }
   };
 
@@ -429,36 +501,6 @@ const Dashboard = () => {
   });
 
   const categories = [...new Set(flashcards.map(card => card.category || 'Bez kategorii'))];
-
-  const handleTogglePublic = async (set) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${set.id}/`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ is_public: !set.is_public })
-      });
-      if (!response.ok) throw new Error('Błąd zmiany statusu publiczności');
-      await fetchFlashcardSets();
-      showNotification('Zmieniono status publiczności zestawu!');
-    } catch (error) {
-      showNotification('Nie udało się zmienić statusu publiczności', 'error');
-    }
-  };
-
-  const handleShareSet = (set) => {
-    if (!set.is_public) {
-      setShareError('Aby udostępnić zestaw, ustaw go jako publiczny.');
-      setShowShareModal(true);
-      return;
-    }
-    setShareLink(`${window.location.origin}/share/${set.share_uuid}`);
-    setShareError('');
-    setShowShareModal(true);
-  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');

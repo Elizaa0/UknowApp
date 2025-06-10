@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import styles from "../css/Login.module.css";
 
-function Login() {
+const Login = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -13,9 +13,9 @@ function Login() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -28,10 +28,6 @@ function Login() {
   };
 
   const check2FARequirement = async (data) => {
-    if (!data.access) {
-      throw new Error("Brak tokenu dostępu w odpowiedzi serwera");
-    }
-
     if (data.requires_2fa_setup) {
       sessionStorage.setItem("tempToken", data.access);
       navigate("/2fa-setup");
@@ -44,10 +40,15 @@ function Login() {
       return false;
     }
 
-    localStorage.setItem("token", data.access);
-    if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
-    navigate("/dashboard");
-    return true;
+    if (data.access && data.refresh) {
+      localStorage.setItem("token", data.access);
+      localStorage.setItem("refreshToken", data.refresh);
+      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+      navigate("/dashboard");
+      return true;
+    } else {
+      throw new Error("Brak tokenów dostępu w odpowiedzi serwera");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -146,6 +147,6 @@ function Login() {
       </div>
     </div>
   );
-}
+};
 
 export default Login;

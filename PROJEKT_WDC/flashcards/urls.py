@@ -6,7 +6,10 @@ from .views import (
     FlashcardDetailView,
     FlashcardsBySetView,
     update_flashcard_status,
-    public_flashcard_set
+    public_flashcard_set,
+    update_flashcard_status,
+    generate_flashcards_from_file,
+    generate_flashcards_from_text_endpoint
 )
 
 urlpatterns = [
@@ -18,4 +21,8 @@ urlpatterns = [
     path('<int:pk>/update-status/', update_flashcard_status, name='update-flashcard-status'),
     path('<int:pk>/status/', update_flashcard_status, name='update-flashcard-status-alt'),
     path('share/<uuid:uuid>/', public_flashcard_set, name='public-flashcard-set'),
+]
+
+    path('generate-flashcards/upload/', generate_flashcards_from_file, name='generate-flashcards-upload'),
+    path('generate-flashcards/', generate_flashcards_from_text_endpoint, name='generate-flashcards-text'),
 ]
