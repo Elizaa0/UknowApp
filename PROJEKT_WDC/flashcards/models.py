@@ -67,10 +67,10 @@ class Flashcard(models.Model):
     ]
 
     question = models.TextField(
-        validators=[MinLengthValidator(10, "Pytanie musi mieć co najmniej 10 znaków")]
+        validators=[MinLengthValidator(2, "Pytanie musi mieć co najmniej 2 znaki")]
     )
     answer = models.TextField(
-        validators=[MinLengthValidator(5, "Odpowiedź musi mieć co najmniej 5 znaków")]
+        validators=[MinLengthValidator(2, "Odpowiedź musi mieć co najmniej 2 znaki")]
     )
     flashcard_set = models.ForeignKey(
         FlashcardSet,

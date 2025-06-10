@@ -1,116 +1,228 @@
 import React, { useState } from 'react';
 import styles from '../css/AutoGenerator.module.css';
+import { API_URL } from '../config';
 
-const AutoGenerator = ({ onGenerate }) => {
+const AutoGenerator = ({ onGenerate, onClose }) => {
   const [file, setFile] = useState(null);
   const [text, setText] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [mode, setMode] = useState('text');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsProcessing(true);
-
-    try {
-      let content = text;
-
-      if (mode === 'file' && file) {
-
-        content = await readFileContent(file);
-      }
-
-      const response = await fetch('http://localhost:8000/api/generate-flashcards/', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      });
-
-      const data = await response.json();
-      onGenerate(data.flashcards);
-    } catch (error) {
-      console.error('Błąd generowania fiszek:', error);
-    } finally {
-      setIsProcessing(false);
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setError('');
     }
   };
 
-  const readFileContent = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => resolve(event.target.result);
-      reader.onerror = (error) => reject(error);
-      reader.readAsText(file);
-    });
+  const handleTextChange = (event) => {
+    setText(event.target.value);
+    setError('');
+  };
+
+  const refreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        throw new Error('Brak tokenu odświeżania');
+      }
+
+      const response = await fetch(`${API_URL}/users/token/refresh/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh: refreshToken })
+      });
+
+      if (!response.ok) {
+        throw new Error('Nie udało się odświeżyć tokenu');
+      }
+
+      const data = await response.json();
+      localStorage.setItem('token', data.access);
+      return data.access;
+    } catch (error) {
+      console.error('Błąd podczas odświeżania tokenu:', error);
+      throw error;
+    }
+  };
+
+  const handleFileUpload = async (file) => {
+    try {
+      console.log('Rozpoczynam przesyłanie pliku:', file.name);
+      console.log('Typ pliku:', file.type);
+      console.log('Rozmiar pliku:', file.size, 'bajtów');
+
+      // Sprawdź zawartość pliku
+      const fileContent = await file.text();
+      console.log('Zawartość pliku:', fileContent);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      let token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Brak tokenu autoryzacji. Zaloguj się ponownie.');
+      }
+
+      console.log('Wysyłam żądanie do:', `${API_URL}/flashcards/generate-flashcards/upload/`);
+      console.log('Token:', token);
+
+      const makeRequest = async (currentToken) => {
+        const request = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${currentToken}`,
+            'Accept': 'application/json'
+          },
+          credentials: 'include',
+          body: formData
+        };
+        console.log('Konfiguracja żądania:', request);
+        return fetch(`${API_URL}/flashcards/generate-flashcards/upload/`, request);
+      };
+
+      let response = await makeRequest(token);
+
+      // Jeśli token wygasł, spróbuj odświeżyć
+      if (response.status === 401) {
+        try {
+          token = await refreshToken();
+          response = await makeRequest(token);
+        } catch (refreshError) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          throw new Error('Sesja wygasła. Zaloguj się ponownie.');
+        }
+      }
+
+      console.log('Status odpowiedzi:', response.status);
+      console.log('Headers odpowiedzi:', Array.from(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Szczegóły błędu:', errorData);
+        throw new Error(errorData.detail || errorData.error || errorData.message || 'Nie udało się wygenerować fiszek z tego tekstu');
+      }
+
+      const data = await response.json();
+      console.log('Otrzymane dane:', data);
+
+      if (!data.flashcards) {
+        console.error('Nieoczekiwany format danych:', data);
+        throw new Error('Nieprawidłowy format danych z serwera');
+      }
+
+      onGenerate(data.flashcards);
+    } catch (error) {
+      console.error('Błąd podczas przesyłania pliku:', error);
+      setError(error.message);
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      if (file) {
+        await handleFileUpload(file);
+      } else if (text.trim()) {
+        let token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Brak tokenu autoryzacji. Zaloguj się ponownie.');
+        }
+
+        const makeRequest = async (currentToken) => {
+          return fetch(`${API_URL}/flashcards/generate-flashcards/`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${currentToken}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ content: text })
+          });
+        };
+
+        let response = await makeRequest(token);
+
+        // Jeśli token wygasł, spróbuj odświeżyć
+        if (response.status === 401) {
+          try {
+            token = await refreshToken();
+            response = await makeRequest(token);
+          } catch (refreshError) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            throw new Error('Sesja wygasła. Zaloguj się ponownie.');
+          }
+        }
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || errorData.error || errorData.message || 'Nie udało się wygenerować fiszek z tego tekstu');
+        }
+
+        const data = await response.json();
+        if (!data.flashcards) {
+          throw new Error('Nieprawidłowy format danych z serwera');
+        }
+        onGenerate(data.flashcards);
+      } else {
+        setError('Wybierz plik lub wprowadź tekst');
+      }
+    } catch (error) {
+      console.error('Błąd:', error);
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className={styles.generatorContainer}>
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tabButton} ${mode === 'text' ? styles.active : ''}`}
-          onClick={() => setMode('text')}
-        >
-          Wklej tekst
-        </button>
-        <button
-          className={`${styles.tabButton} ${mode === 'file' ? styles.active : ''}`}
-          onClick={() => setMode('file')}
-        >
-          Prześlij plik
-        </button>
-      </div>
+    <div className={styles.container}>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div>
+          <input
+            type="file"
+            id="file"
+            accept=".txt,.pdf,.docx"
+            onChange={handleFileChange}
+            className={styles.fileInput}
+          />
+          <label htmlFor="file" className={styles.fileInputLabel}>
+            Wybierz plik
+          </label>
+          <p className={styles.fileInfo}>
+            {file ? `${file.name} (${(file.size / 1024).toFixed(1)} KB)` : 'Brak wybranego pliku'}
+          </p>
+        </div>
 
-      <form onSubmit={handleSubmit} className={styles.generatorForm}>
-        {mode === 'text' ? (
-          <div className={styles.formGroup}>
-            <label>Wklej tekst do analizy</label>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Wklej tutaj tekst, z którego mają zostać wygenerowane fiszki..."
-              rows={10}
-              required
-            />
-          </div>
-        ) : (
-          <div className={styles.formGroup}>
-            <label>Wybierz plik (TXT, PDF, DOCX)</label>
-            <input
-              type="file"
-              onChange={handleFileChange}
-              accept=".txt,.pdf,.docx"
-              required
-            />
-            <p className={styles.fileInfo}>
-              {file ? `Wybrano: ${file.name}` : 'Nie wybrano pliku'}
-            </p>
-          </div>
-        )}
+        <div>
+          <textarea
+            value={text}
+            onChange={handleTextChange}
+            placeholder="Lub wprowadź tekst tutaj..."
+            rows={5}
+            className={styles.textarea}
+          />
+        </div>
 
-        <button
-          type="submit"
-          className={styles.generateButton}
-          disabled={isProcessing}
+        {error && <p className={styles.error}>{error}</p>}
+
+        <button 
+          type="submit" 
+          className={styles.button}
+          disabled={isLoading || (!file && !text.trim())}
         >
-          {isProcessing ? 'Przetwarzanie...' : 'Generuj fiszki'}
+          {isLoading ? 'Generowanie...' : 'Generuj fiszki'}
         </button>
       </form>
-
-      <div className={styles.tips}>
-        <h4>Wskazówki:</h4>
-        <ul>
-          <li>Dla najlepszych wyników używaj dobrze sformatowanego tekstu</li>
-          <li>Kluczowe pojęcia i definicje są automatycznie wykrywane</li>
-          <li>Możesz edytować wygenerowane fiszki przed zapisem</li>
-        </ul>
-      </div>
     </div>
   );
 };
