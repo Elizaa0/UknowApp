@@ -147,34 +147,6 @@ const Dashboard = () => {
     }
   }, [updateStats]);
 
-  const updateFlashcardStatus = async (cardId, isCorrect) => {
-    try {
-      const token = localStorage.getItem('token');
-      const dueDate = isCorrect ? null : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-      const response = await fetch(
-        `http://localhost:8000/api/flashcards/${cardId}/status/`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            status: isCorrect ? 'mastered' : 'learning',
-            due_date: dueDate
-          })
-        }
-      );
-
-      if (!response.ok) throw new Error('Błąd aktualizacji statusu fiszki');
-      return await response.json();
-    } catch (error) {
-      console.error('Błąd:', error);
-      throw error;
-    }
-  };
-
   const startLearning = () => {
     if (!activeSet) {
       showNotification('Wybierz zestaw fiszek, aby rozpocząć naukę', 'error');
@@ -254,6 +226,7 @@ const Dashboard = () => {
     setShowAnswer(false);
     if (activeSet) {
       fetchFlashcards(activeSet.id);
+      fetchFlashcardSets();
     }
   };
 
@@ -341,27 +314,59 @@ const Dashboard = () => {
       return;
     }
 
+    // Jeśli przekazano już gotowe fiszki (np. z PDF), dodaj je od razu
+    if (generatedFlashcards && Array.isArray(generatedFlashcards.flashcards)) {
+      setFlashcards(prev => [...prev, ...generatedFlashcards.flashcards]);
+      updateStats([...flashcards, ...generatedFlashcards.flashcards]);
+      setShowGenerator(false);
+      showNotification(`Wygenerowano ${generatedFlashcards.flashcards.length} nowych fiszek!`);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcards/sets/${activeSet.id}/generate/`, {
+      // Obsłuż zarówno string, jak i obiekt z content
+      let content = '';
+      if (typeof generatedFlashcards === 'string') {
+        content = generatedFlashcards;
+      } else if (generatedFlashcards && generatedFlashcards.content) {
+        content = generatedFlashcards.content;
+      } else {
+        showNotification('Brak treści do wygenerowania fiszek.', 'error');
+        return;
+      }
+      const response = await fetch(`http://localhost:8000/api/flashcards/generate-flashcards/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ content: generatedFlashcards.content })
+        body: JSON.stringify({
+          content: content,
+          flashcard_set_id: activeSet.id
+        })
       });
 
-      if (!response.ok) throw new Error('Błąd podczas generowania fiszek');
+      if (!response.ok) {
+        let errorMsg = 'Błąd podczas generowania fiszek';
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorData.detail || errorData.message || errorMsg;
+          console.error('Szczegóły błędu:', errorData);
+        } catch (e) {
+          // ignore
+        }
+        throw new Error(errorMsg);
+      }
       const data = await response.json();
 
-      setFlashcards(prev => [...prev, ...data.cards]);
-      updateStats([...flashcards, ...data.cards]);
+      setFlashcards(prev => [...prev, ...data.flashcards]);
+      updateStats([...flashcards, ...data.flashcards]);
       setShowGenerator(false);
-      showNotification(`Wygenerowano ${data.cards.length} nowych fiszek!`);
+      showNotification(`Wygenerowano ${data.flashcards.length} nowych fiszek!`);
     } catch (error) {
       console.error('Błąd:', error);
-      showNotification('Nie udało się wygenerować fiszek.', 'error');
+      showNotification(error.message || 'Nie udało się wygenerować fiszek.', 'error');
     }
   };
 
@@ -432,6 +437,63 @@ const Dashboard = () => {
   });
 
   const categories = [...new Set(flashcards.map(card => card.category || 'Bez kategorii'))];
+
+  const handleTogglePublic = async (setId, isPublic) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `http://localhost:8000/api/flashcards/sets/${setId}/`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ is_public: isPublic })
+        }
+      );
+
+      if (!response.ok) throw new Error('Błąd podczas aktualizacji statusu publicznego');
+
+      const updatedSet = await response.json();
+      setFlashcardSets(prevSets =>
+        prevSets.map(set => set.id === setId ? updatedSet : set)
+      );
+
+      showNotification(
+        isPublic ? 'Zestaw jest teraz publiczny' : 'Zestaw jest teraz prywatny',
+        'success'
+      );
+    } catch (error) {
+      console.error('Błąd:', error);
+      showNotification('Nie udało się zaktualizować statusu publicznego', 'error');
+    }
+  };
+
+  const handleShareSet = async (setId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `http://localhost:8000/api/flashcards/sets/${setId}/share/`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) throw new Error('Błąd podczas generowania linku do udostępnienia');
+
+      const data = await response.json();
+      setShareLink(data.share_link);
+      setShowShareModal(true);
+    } catch (error) {
+      console.error('Błąd:', error);
+      setShareError('Nie udało się wygenerować linku do udostępnienia');
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -639,7 +701,7 @@ const Dashboard = () => {
                             checked={set.is_public}
                             onChange={e => {
                               e.stopPropagation();
-                              handleTogglePublic(set);
+                              handleTogglePublic(set.id, e.target.checked);
                             }}
                           />
                           <span>Publiczny</span>
@@ -648,7 +710,7 @@ const Dashboard = () => {
                           className={styles.shareButton}
                           onClick={e => {
                             e.stopPropagation();
-                            handleShareSet(set);
+                            handleShareSet(set.id);
                           }}
                         >
                           Udostępnij
@@ -857,7 +919,11 @@ const Dashboard = () => {
                         {showGenerator && (
                           <AutoGenerator
                             onGenerate={handleGenerateFlashcards}
-                            onCancel={() => setShowGenerator(false)}
+                            onClose={() => {
+                              setShowGenerator(false);
+                              if (activeSet) fetchFlashcards(activeSet.id);
+                            }}
+                            activeSet={activeSet}
                           />
                         )}
 

@@ -8,7 +8,8 @@ from .views import (
     update_flashcard_status,
     public_flashcard_set,
     generate_flashcards_from_file,
-    generate_flashcards_from_text_endpoint
+    generate_flashcards_from_text_endpoint,
+    PDFExtractView
 )
 
 urlpatterns = [
@@ -22,4 +23,5 @@ urlpatterns = [
     path('share/<uuid:uuid>/', public_flashcard_set, name='public-flashcard-set'),
     path('generate-flashcards/upload/', generate_flashcards_from_file, name='generate-flashcards-upload'),
     path('generate-flashcards/', generate_flashcards_from_text_endpoint, name='generate-flashcards-text'),
+    path('api/extract-pdf/', PDFExtractView.as_view(), name='extract-pdf'),
 ]

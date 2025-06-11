@@ -2,18 +2,16 @@ import React, { useState } from 'react';
 import styles from '../css/AutoGenerator.module.css';
 import { API_URL } from '../config';
 
-const AutoGenerator = ({ onGenerate, onClose }) => {
+const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
   const [file, setFile] = useState(null);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setError('');
-    }
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+    setText('');
+    setError('');
   };
 
   const handleTextChange = (event) => {
@@ -55,12 +53,11 @@ const AutoGenerator = ({ onGenerate, onClose }) => {
       console.log('Typ pliku:', file.type);
       console.log('Rozmiar pliku:', file.size, 'bajtów');
 
-      // Sprawdź zawartość pliku
-      const fileContent = await file.text();
-      console.log('Zawartość pliku:', fileContent);
-
       const formData = new FormData();
       formData.append('file', file);
+      if (activeSet && activeSet.id) {
+        formData.append('flashcard_set_id', activeSet.id);
+      }
 
       let token = localStorage.getItem('token');
       if (!token) {
@@ -110,12 +107,12 @@ const AutoGenerator = ({ onGenerate, onClose }) => {
       const data = await response.json();
       console.log('Otrzymane dane:', data);
 
-      if (!data.flashcards) {
+      if (data.flashcards) {
+        onGenerate({ flashcards: data.flashcards });
+      } else {
         console.error('Nieoczekiwany format danych:', data);
         throw new Error('Nieprawidłowy format danych z serwera');
       }
-
-      onGenerate(data.flashcards);
     } catch (error) {
       console.error('Błąd podczas przesyłania pliku:', error);
       setError(error.message);
@@ -172,7 +169,7 @@ const AutoGenerator = ({ onGenerate, onClose }) => {
         if (!data.flashcards) {
           throw new Error('Nieprawidłowy format danych z serwera');
         }
-        onGenerate(data.flashcards);
+        onGenerate({ content: text });
       } else {
         setError('Wybierz plik lub wprowadź tekst');
       }
@@ -191,7 +188,7 @@ const AutoGenerator = ({ onGenerate, onClose }) => {
           <input
             type="file"
             id="file"
-            accept=".txt,.pdf,.docx"
+            accept="application/pdf"
             onChange={handleFileChange}
             className={styles.fileInput}
           />
@@ -202,7 +199,6 @@ const AutoGenerator = ({ onGenerate, onClose }) => {
             {file ? `${file.name} (${(file.size / 1024).toFixed(1)} KB)` : 'Brak wybranego pliku'}
           </p>
         </div>
-
         <div>
           <textarea
             value={text}
@@ -212,9 +208,7 @@ const AutoGenerator = ({ onGenerate, onClose }) => {
             className={styles.textarea}
           />
         </div>
-
         {error && <p className={styles.error}>{error}</p>}
-
         <button 
           type="submit" 
           className={styles.button}

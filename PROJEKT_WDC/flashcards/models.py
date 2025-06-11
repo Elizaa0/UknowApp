@@ -125,41 +125,28 @@ class Flashcard(models.Model):
 
     def update_sm2(self, quality):
         """
-        Update flashcard using SM-2 algorithm
-        quality: 0-5 rating of how well the user remembered the answer
+        Update flashcard using 6-stopniowa skala:
+        0,1,2: do powtórki
+        3,4: w trakcie nauki
+        5: opanowana
         """
         from datetime import datetime, timedelta
 
-        # Update easiness factor
-        self.easiness = max(1.3, self.easiness + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)))
-
-        # Update repetitions and interval
-        if quality >= 3:  # Successful recall
-            if self.repetitions == 0:
-                self.interval = 1
-            elif self.repetitions == 1:
-                self.interval = 6
-            else:
-                self.interval = round(self.interval * self.easiness)
-            self.repetitions += 1
-            self.status = 'learning'
-        else:  # Failed recall
-            self.repetitions = 0
-            self.interval = 1
-            self.status = 'learning'
-
-        # Update review dates
-        self.last_reviewed = datetime.now()
-        self.next_review = self.last_reviewed + timedelta(days=self.interval)
-
-        # Update due date
-        self.due_date = self.next_review
-
-        # If interval is very long, mark as mastered
-        if self.interval > 30:
+        if quality >= 5:
             self.status = 'mastered'
             self.due_date = None
-
+            self.last_reviewed = datetime.now()
+            self.next_review = None
+        elif quality >= 3:
+            self.status = 'learning'
+            self.due_date = datetime.now() + timedelta(days=1)
+            self.last_reviewed = datetime.now()
+            self.next_review = self.due_date
+        else:
+            self.status = 'learning'
+            self.due_date = datetime.now()
+            self.last_reviewed = datetime.now()
+            self.next_review = datetime.now()
         self.save()
 
     def save(self, *args, **kwargs):

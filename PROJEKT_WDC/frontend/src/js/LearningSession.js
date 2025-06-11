@@ -112,20 +112,24 @@ const LearningSession = () => {
   const updateCardProgress = async (cardId, isCorrect) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcards/${cardId}/progress/`, {
-        method: 'POST',
+      const response = await fetch(`http://localhost:8000/api/flashcards/${cardId}/update-status/`, {
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ correct: isCorrect })
+        body: JSON.stringify({ quality: isCorrect ? 5 : 0 })
       });
 
       if (!response.ok) {
-        console.error('Nie udało się zaktualizować postępu karty');
+        throw new Error('Nie udało się zaktualizować postępu karty');
       }
+
+      const updatedCard = await response.json();
+      console.log('Zaktualizowana fiszka:', updatedCard);
     } catch (error) {
       console.error('Błąd:', error);
+      throw error;
     }
   };
 

@@ -10,6 +10,7 @@ import PyPDF2
 from docx import Document
 import io
 import re
+from rest_framework.views import APIView
 
 
 # Twoje istniejące klasy views pozostają bez zmian
@@ -133,20 +134,16 @@ def update_flashcard_status(request, pk):
             status=status.HTTP_404_NOT_FOUND
         )
 
-    serializer = FlashcardStatusSerializer(
-        flashcard,
-        data=request.data,
-        partial=True
-    )
+    quality = request.data.get('quality')
+    if quality is not None:
+        try:
+            quality = int(quality)
+            flashcard.update_sm2(quality)
+        except Exception as e:
+            return Response({'message': f'Błąd podczas aktualizacji SM-2: {str(e)}'}, status=400)
 
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data)
-
-    return Response(
-        serializer.errors,
-        status=status.HTTP_400_BAD_REQUEST
-    )
+    serializer = FlashcardStatusSerializer(flashcard)
+    return Response(serializer.data)
 
 
 # Funkcje pomocnicze do ekstrakcji tekstu
@@ -355,13 +352,34 @@ def generate_flashcards_from_file(request):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            print("\nPrzykładowe wygenerowane fiszki:")
-            for i, card in enumerate(flashcards[:3], 1):
-                print(f"\nFiszka {i}:")
-                print(f"Pytanie: {card['question']}")
-                print(f"Odpowiedź: {card['answer']}")
+            # Zapisz fiszki do wybranego zestawu, jeśli podano flashcard_set_id
+            flashcard_set_id = request.data.get('flashcard_set_id') or request.POST.get('flashcard_set_id')
+            created_flashcards = []
+            if flashcard_set_id:
+                try:
+                    flashcard_set = FlashcardSet.objects.get(id=flashcard_set_id, owner=request.user)
+                    for card in flashcards:
+                        flashcard = Flashcard.objects.create(
+                            flashcard_set=flashcard_set,
+                            question=card['question'],
+                            answer=card['answer'],
+                            status='new'
+                        )
+                        created_flashcards.append({
+                            'id': flashcard.id,
+                            'question': flashcard.question,
+                            'answer': flashcard.answer,
+                            'status': flashcard.status
+                        })
+                    print(f"Zapisano {len(created_flashcards)} fiszek w zestawie {flashcard_set_id}")
+                except FlashcardSet.DoesNotExist:
+                    print("Nie znaleziono zestawu fiszek do zapisu!")
+                    return Response({'error': 'Nie znaleziono zestawu fiszek do zapisu!'}, status=404)
+            else:
+                # Jeśli nie podano zestawu, zwróć tylko wygenerowane fiszki (bez id)
+                created_flashcards = flashcards
 
-            return Response({'flashcards': flashcards})
+            return Response({'flashcards': created_flashcards})
         except Exception as e:
             print(f"Błąd podczas generowania fiszek: {str(e)}")
             import traceback
@@ -393,12 +411,28 @@ def generate_flashcards_from_text_endpoint(request):
             return Response({'message': 'Endpoint działa! Użyj POST z content w body.'})
 
         content = request.data.get('content', '').strip()
+        flashcard_set_id = request.data.get('flashcard_set_id')
         print(f"Received content length: {len(content)} characters")
+        print(f"Flashcard set ID: {flashcard_set_id}")
 
         if not content:
             return Response(
                 {'error': 'Nie podano tekstu do przetworzenia'},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not flashcard_set_id:
+            return Response(
+                {'error': 'Nie podano ID zestawu fiszek'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            flashcard_set = FlashcardSet.objects.get(id=flashcard_set_id, owner=request.user)
+        except FlashcardSet.DoesNotExist:
+            return Response(
+                {'error': 'Zestaw fiszek nie istnieje lub nie masz do niego dostępu'},
+                status=status.HTTP_404_NOT_FOUND
             )
 
         # Generuj fiszki z tekstu
@@ -410,11 +444,27 @@ def generate_flashcards_from_text_endpoint(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        print(f"Generated {len(flashcards)} flashcards")
+        # Zapisz fiszki w bazie danych
+        created_flashcards = []
+        for card in flashcards:
+            flashcard = Flashcard.objects.create(
+                flashcard_set=flashcard_set,
+                question=card['question'],
+                answer=card['answer'],
+                status='new'
+            )
+            created_flashcards.append({
+                'id': flashcard.id,
+                'question': flashcard.question,
+                'answer': flashcard.answer,
+                'status': flashcard.status
+            })
+
+        print(f"Generated and saved {len(created_flashcards)} flashcards")
 
         return Response({
-            'flashcards': flashcards,
-            'message': f'Wygenerowano {len(flashcards)} fiszek'
+            'flashcards': created_flashcards,
+            'message': f'Wygenerowano i zapisano {len(created_flashcards)} fiszek'
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -435,3 +485,17 @@ def public_flashcard_set(request, uuid):
         return Response({'detail': 'Zestaw nie istnieje lub nie jest publiczny.'}, status=404)
     serializer = FlashcardSetSerializer(flashcard_set)
     return Response(serializer.data)
+
+
+class PDFExtractView(APIView):
+    parser_classes = [MultiPartParser]
+
+    def post(self, request, format=None):
+        pdf_file = request.FILES.get('file')
+        if not pdf_file:
+            return Response({'error': 'Nie przesłano pliku PDF.'}, status=400)
+        try:
+            text = extract_text_from_pdf(pdf_file)
+            return Response({'text': text})
+        except Exception as e:
+            return Response({'error': f'Błąd podczas ekstrakcji tekstu: {str(e)}'}, status=400)
