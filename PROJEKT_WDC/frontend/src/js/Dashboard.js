@@ -810,9 +810,13 @@ const Dashboard = () => {
                           className={styles.categoryFilter}
                         >
                           <option value="">Wszystkie kategorie</option>
-                          {categories.map(category => (
-                            <option key={category} value={category}>{category}</option>
-                          ))}
+                          {categories.map(category => {
+                            const key = typeof category === 'object' ? category.id : category;
+                            const value = typeof category === 'object' ? category.name : category;
+                            return (
+                              <option key={key} value={value}>{value}</option>
+                            );
+                          })}
                         </select>
                       </div>
                     </div>
@@ -832,7 +836,7 @@ const Dashboard = () => {
                         {filteredByStat.map(card => (
                           <li key={card.id} className={styles.flashcardItem}>
                             <div className={styles.cardHeader}>
-                              <span className={styles.cardCategory}>{card.category || 'Bez kategorii'}</span>
+                              <span className={styles.cardCategory}>{typeof card.category === 'object' ? card.category.name : card.category || 'Bez kategorii'}</span>
                               <span className={`${styles.difficulty} ${styles[card.difficulty || 'medium']}`}>
                                 {card.difficulty === 'easy' ? 'Łatwa' :
                                  card.difficulty === 'medium' ? 'Średnia' : 'Trudna'}
