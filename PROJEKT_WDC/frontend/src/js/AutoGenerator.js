@@ -5,6 +5,8 @@ import { API_URL } from '../config';
 const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
   const [file, setFile] = useState(null);
   const [text, setText] = useState('');
+  const [category, setCategory] = useState('');
+  const [difficulty, setDifficulty] = useState('medium');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -58,6 +60,8 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
       if (activeSet && activeSet.id) {
         formData.append('flashcard_set_id', activeSet.id);
       }
+      formData.append('category', category.trim() === '' ? 'Bez kategorii' : category.trim());
+      formData.append('difficulty', difficulty);
 
       let token = localStorage.getItem('token');
       if (!token) {
@@ -142,7 +146,7 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
               'Accept': 'application/json'
             },
             credentials: 'include',
-            body: JSON.stringify({ content: text })
+            body: JSON.stringify({ content: text, category: category.trim() === '' ? 'Bez kategorii' : category.trim(), difficulty })
           });
         };
 
@@ -184,6 +188,23 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
   return (
     <div className={styles.container}>
       <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.formGroup}>
+          <label>Kategoria</label>
+          <input
+            type="text"
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            placeholder="Wpisz kategorię (np. Angielski, Biologia)"
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label>Trudność</label>
+          <select value={difficulty} onChange={e => setDifficulty(e.target.value)}>
+            <option value="easy">Łatwa</option>
+            <option value="medium">Średnia</option>
+            <option value="hard">Trudna</option>
+          </select>
+        </div>
         <div>
           <input
             type="file"

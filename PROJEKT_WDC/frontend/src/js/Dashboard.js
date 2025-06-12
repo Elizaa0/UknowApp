@@ -38,6 +38,7 @@ const Dashboard = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareLink, setShareLink] = useState('');
   const [shareError, setShareError] = useState('');
+  const [activeStatCategory, setActiveStatCategory] = useState('all');
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -424,16 +425,12 @@ const Dashboard = () => {
     }
   };
 
-  const filteredFlashcards = flashcards.filter(card => {
-    const frontText = card.front || card.question || '';
-    const backText = card.back || card.answer || '';
-    const searchTermLower = searchTerm.toLowerCase();
-    return frontText.toLowerCase().includes(searchTermLower) ||
-           backText.toLowerCase().includes(searchTermLower);
-  }).filter(card => {
-    if (!filterCategory) return true;
-    if (filterCategory === 'Bez kategorii') return !card.category || card.category === '';
-    return card.category === filterCategory;
+  const filteredByStat = flashcards.filter(card => {
+    if (activeStatCategory === 'all') return true;
+    if (activeStatCategory === 'mastered') return card.status === 'mastered';
+    if (activeStatCategory === 'due') return card.status === 'learning' && isDue(card.due_date);
+    if (activeStatCategory === 'learning') return card.status === 'learning' && !isDue(card.due_date);
+    return true;
   });
 
   const categories = [...new Set(flashcards.map(card => card.category || 'Bez kategorii'))];
@@ -779,19 +776,19 @@ const Dashboard = () => {
                 {activeTab === 'fiszki' && (
                   <div className={styles.flashcardsTab}>
                     <div className={styles.statsContainer}>
-                      <div className={styles.statItem}>
+                      <div className={styles.statItem} onClick={() => setActiveStatCategory('all')} style={{cursor: 'pointer', border: activeStatCategory === 'all' ? '2px solid #646cff' : undefined}}>
                         <span className={styles.statLabel}>Wszystkie fiszki</span>
                         <span className={styles.statValue}>{stats.total}</span>
                       </div>
-                      <div className={styles.statItem}>
+                      <div className={styles.statItem} onClick={() => setActiveStatCategory('mastered')} style={{cursor: 'pointer', border: activeStatCategory === 'mastered' ? '2px solid #2ed573' : undefined}}>
                         <span className={styles.statLabel}>Opanowane</span>
                         <span className={`${styles.statValue} ${styles.mastered}`}>{stats.mastered}</span>
                       </div>
-                      <div className={styles.statItem}>
+                      <div className={styles.statItem} onClick={() => setActiveStatCategory('due')} style={{cursor: 'pointer', border: activeStatCategory === 'due' ? '2px solid #ff4757' : undefined}}>
                         <span className={styles.statLabel}>Do powtórki</span>
                         <span className={`${styles.statValue} ${styles.due}`}>{stats.due}</span>
                       </div>
-                      <div className={styles.statItem}>
+                      <div className={styles.statItem} onClick={() => setActiveStatCategory('learning')} style={{cursor: 'pointer', border: activeStatCategory === 'learning' ? '2px solid #1e90ff' : undefined}}>
                         <span className={styles.statLabel}>W trakcie nauki</span>
                         <span className={`${styles.statValue} ${styles.learning}`}>{stats.learning}</span>
                       </div>
@@ -830,9 +827,9 @@ const Dashboard = () => {
                           Utwórz nowy zestaw
                         </button>
                       </div>
-                    ) : filteredFlashcards.length > 0 ? (
+                    ) : filteredByStat.length > 0 ? (
                       <ul className={styles.cardGrid}>
-                        {filteredFlashcards.map(card => (
+                        {filteredByStat.map(card => (
                           <li key={card.id} className={styles.flashcardItem}>
                             <div className={styles.cardHeader}>
                               <span className={styles.cardCategory}>{card.category || 'Bez kategorii'}</span>

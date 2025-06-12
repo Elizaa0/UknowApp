@@ -125,28 +125,25 @@ class Flashcard(models.Model):
 
     def update_sm2(self, quality):
         """
-        Update flashcard using 6-stopniowa skala:
-        0,1,2: do powtórki
-        3,4: w trakcie nauki
-        5: opanowana
+        Uproszczona logika powtórek:
+        0,1,2: do powtórki od razu
+        3,4,5: opanowana
         """
         from datetime import datetime, timedelta
 
-        if quality >= 5:
-            self.status = 'mastered'
-            self.due_date = None
-            self.last_reviewed = datetime.now()
-            self.next_review = None
-        elif quality >= 3:
+        if quality < 3:
             self.status = 'learning'
             self.due_date = datetime.now() + timedelta(days=1)
             self.last_reviewed = datetime.now()
             self.next_review = self.due_date
+            self.repetitions = 0
+            self.interval = 1
         else:
-            self.status = 'learning'
-            self.due_date = datetime.now()
+            self.status = 'mastered'
+            self.due_date = None
             self.last_reviewed = datetime.now()
-            self.next_review = datetime.now()
+            self.next_review = None
+            self.repetitions += 1
         self.save()
 
     def save(self, *args, **kwargs):

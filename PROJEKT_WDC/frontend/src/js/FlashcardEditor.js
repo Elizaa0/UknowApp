@@ -4,7 +4,7 @@ import styles from '../css/FlashcardEditor.module.css';
 const FlashcardEditor = ({ onSave, initialData }) => {
   const [front, setFront] = useState(initialData?.front || '');
   const [back, setBack] = useState(initialData?.back || '');
-  const [category, setCategory] = useState(initialData?.category || 'Programowanie');
+  const [category, setCategory] = useState(initialData?.category || '');
   const [difficulty, setDifficulty] = useState(initialData?.difficulty || 'medium');
   const [tags, setTags] = useState(initialData?.tags?.join(', ') || '');
   const [errors, setErrors] = useState({});
@@ -36,10 +36,12 @@ const FlashcardEditor = ({ onSave, initialData }) => {
       .map(tag => tag.trim())
       .filter(tag => tag);
 
+    const finalCategory = category.trim() === '' ? 'Bez kategorii' : category.trim();
+
     onSave({
       front,
       back,
-      category,
+      category: finalCategory,
       difficulty,
       tags: tagsArray,
       question: front,
@@ -48,7 +50,7 @@ const FlashcardEditor = ({ onSave, initialData }) => {
 
     setFront('');
     setBack('');
-    setCategory('Programowanie');
+    setCategory('');
     setDifficulty('medium');
     setTags('');
   };
@@ -82,12 +84,12 @@ const FlashcardEditor = ({ onSave, initialData }) => {
       <div className={styles.formRow}>
         <div className={styles.formGroup}>
           <label>Kategoria</label>
-          <select value={category} onChange={(e) => setCategory(e.target.value)}>
-            <option>Programowanie</option>
-            <option>Języki obce</option>
-            <option>Historia</option>
-            <option>Nauki ścisłe</option>
-          </select>
+          <input
+            type="text"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="Wpisz kategorię (np. Angielski, Biologia)"
+          />
         </div>
 
         <div className={styles.formGroup}>

@@ -24,8 +24,8 @@ function App() {
             <Route path="/2fa-setup" element={<TwoFactorSetup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/learn/:setId" element={<LearningSession />} />
+          <Route path="/public/:uuid" element={<PublicShare />} />
           <Route path="/shared/:token" element={<SharedFlashcards />} />
-          <Route path="/share/:uuid" element={<PublicShare />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>

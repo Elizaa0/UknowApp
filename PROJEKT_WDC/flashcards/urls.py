@@ -9,7 +9,8 @@ from .views import (
     public_flashcard_set,
     generate_flashcards_from_file,
     generate_flashcards_from_text_endpoint,
-    PDFExtractView
+    PDFExtractView,
+    generate_share_link
 )
 
 urlpatterns = [
@@ -21,6 +22,7 @@ urlpatterns = [
     path('<int:pk>/update-status/', update_flashcard_status, name='update-flashcard-status'),
     path('<int:pk>/status/', update_flashcard_status, name='update-flashcard-status-alt'),
     path('share/<uuid:uuid>/', public_flashcard_set, name='public-flashcard-set'),
+    path('sets/<int:setId>/share/', generate_share_link, name='generate-share-link'),
     path('generate-flashcards/upload/', generate_flashcards_from_file, name='generate-flashcards-upload'),
     path('generate-flashcards/', generate_flashcards_from_text_endpoint, name='generate-flashcards-text'),
     path('api/extract-pdf/', PDFExtractView.as_view(), name='extract-pdf'),

@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
-from .models import FlashcardSet, Flashcard
+from .models import FlashcardSet, Flashcard, Category
 from .serializers import FlashcardSetSerializer, FlashcardSerializer, FlashcardStatusSerializer
 from django.shortcuts import get_object_or_404
 import PyPDF2
@@ -11,6 +11,7 @@ from docx import Document
 import io
 import re
 from rest_framework.views import APIView
+import uuid
 
 
 # Twoje istniejące klasy views pozostają bez zmian
@@ -167,12 +168,12 @@ def extract_text_from_pdf(file):
             try:
                 page_text = page.extract_text()
                 if page_text:
-                    print(f"Strona {i+1}, długość tekstu: {len(page_text)} znaków")
+                    print(f"Strona {i + 1}, długość tekstu: {len(page_text)} znaków")
                     text += page_text + "\n"
                 else:
-                    print(f"Strona {i+1}: Brak tekstu")
+                    print(f"Strona {i + 1}: Brak tekstu")
             except Exception as page_error:
-                print(f"Błąd podczas przetwarzania strony {i+1}: {str(page_error)}")
+                print(f"Błąd podczas przetwarzania strony {i + 1}: {str(page_error)}")
                 continue
 
         # Wyświetl przykładowy fragment tekstu
@@ -190,10 +191,10 @@ def extract_text_from_pdf(file):
                     # Próba pobrania tekstu z obiektu strony
                     page_text = page.get_text()
                     if page_text:
-                        print(f"Strona {i+1} (metoda alternatywna), długość tekstu: {len(page_text)} znaków")
+                        print(f"Strona {i + 1} (metoda alternatywna), długość tekstu: {len(page_text)} znaków")
                         text += page_text + "\n"
                 except Exception as page_error:
-                    print(f"Błąd podczas alternatywnego przetwarzania strony {i+1}: {str(page_error)}")
+                    print(f"Błąd podczas alternatywnego przetwarzania strony {i + 1}: {str(page_error)}")
                     continue
 
         if not text.strip():
@@ -352,6 +353,16 @@ def generate_flashcards_from_file(request):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Pobierz kategorię i trudność z requesta
+            req_category = request.data.get('category') or request.POST.get('category')
+            req_difficulty = request.data.get('difficulty') or request.POST.get('difficulty')
+            if not req_category or req_category.strip() == '':
+                req_category = 'Bez kategorii'
+            if not req_difficulty or req_difficulty.strip() == '':
+                req_difficulty = 'medium'
+            # Pobierz lub utwórz obiekt Category
+            category_obj, _ = Category.objects.get_or_create(name=req_category)
+
             # Zapisz fiszki do wybranego zestawu, jeśli podano flashcard_set_id
             flashcard_set_id = request.data.get('flashcard_set_id') or request.POST.get('flashcard_set_id')
             created_flashcards = []
@@ -363,13 +374,17 @@ def generate_flashcards_from_file(request):
                             flashcard_set=flashcard_set,
                             question=card['question'],
                             answer=card['answer'],
-                            status='new'
+                            status='new',
+                            category=category_obj,
+                            difficulty=req_difficulty
                         )
                         created_flashcards.append({
                             'id': flashcard.id,
                             'question': flashcard.question,
                             'answer': flashcard.answer,
-                            'status': flashcard.status
+                            'status': flashcard.status,
+                            'category': flashcard.category.name if flashcard.category else None,
+                            'difficulty': flashcard.difficulty
                         })
                     print(f"Zapisano {len(created_flashcards)} fiszek w zestawie {flashcard_set_id}")
                 except FlashcardSet.DoesNotExist:
@@ -377,6 +392,9 @@ def generate_flashcards_from_file(request):
                     return Response({'error': 'Nie znaleziono zestawu fiszek do zapisu!'}, status=404)
             else:
                 # Jeśli nie podano zestawu, zwróć tylko wygenerowane fiszki (bez id)
+                for card in flashcards:
+                    card['category'] = req_category
+                    card['difficulty'] = req_difficulty
                 created_flashcards = flashcards
 
             return Response({'flashcards': created_flashcards})
@@ -412,6 +430,12 @@ def generate_flashcards_from_text_endpoint(request):
 
         content = request.data.get('content', '').strip()
         flashcard_set_id = request.data.get('flashcard_set_id')
+        req_category = request.data.get('category')
+        req_difficulty = request.data.get('difficulty')
+        if not req_category or req_category.strip() == '':
+            req_category = 'Bez kategorii'
+        if not req_difficulty or req_difficulty.strip() == '':
+            req_difficulty = 'medium'
         print(f"Received content length: {len(content)} characters")
         print(f"Flashcard set ID: {flashcard_set_id}")
 
@@ -451,13 +475,17 @@ def generate_flashcards_from_text_endpoint(request):
                 flashcard_set=flashcard_set,
                 question=card['question'],
                 answer=card['answer'],
-                status='new'
+                status='new',
+                category=category_obj,
+                difficulty=req_difficulty
             )
             created_flashcards.append({
                 'id': flashcard.id,
                 'question': flashcard.question,
                 'answer': flashcard.answer,
-                'status': flashcard.status
+                'status': flashcard.status,
+                'category': flashcard.category.name if flashcard.category else None,
+                'difficulty': flashcard.difficulty
             })
 
         print(f"Generated and saved {len(created_flashcards)} flashcards")
@@ -480,9 +508,9 @@ def generate_flashcards_from_text_endpoint(request):
 @api_view(['GET'])
 def public_flashcard_set(request, uuid):
     try:
-        flashcard_set = FlashcardSet.objects.get(share_uuid=uuid, is_public=True)
+        flashcard_set = FlashcardSet.objects.get(share_uuid=uuid)
     except FlashcardSet.DoesNotExist:
-        return Response({'detail': 'Zestaw nie istnieje lub nie jest publiczny.'}, status=404)
+        return Response({'detail': 'Zestaw nie istnieje.'}, status=404)
     serializer = FlashcardSetSerializer(flashcard_set)
     return Response(serializer.data)
 
@@ -499,3 +527,30 @@ class PDFExtractView(APIView):
             return Response({'text': text})
         except Exception as e:
             return Response({'error': f'Błąd podczas ekstrakcji tekstu: {str(e)}'}, status=400)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def generate_share_link(request, setId):
+    try:
+        flashcard_set = FlashcardSet.objects.get(id=setId, owner=request.user)
+        # Generate a new UUID if it doesn't exist
+        if not flashcard_set.share_uuid:
+            flashcard_set.share_uuid = uuid.uuid4()
+            flashcard_set.save()
+
+        share_link = f"http://localhost:3000/public/{flashcard_set.share_uuid}"
+        return Response({
+            'share_link': share_link,
+            'share_uuid': str(flashcard_set.share_uuid)
+        })
+    except FlashcardSet.DoesNotExist:
+        return Response(
+            {'detail': 'Zestaw nie istnieje lub nie masz do niego dostępu.'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        return Response(
+            {'detail': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
