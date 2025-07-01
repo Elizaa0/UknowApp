@@ -1,3 +1,7 @@
+/*
+  Plik: TwoFactorAuth.module.css
+  Style dla komponentów obsługujących weryfikację dwuetapową (2FA).
+*/
 .container {
   display: flex;
   justify-content: center;
@@ -25,7 +29,9 @@
   font-weight: 600;
 }
 
-.verifyButton, .submitButton, .resendButton {
+.verifyButton,
+.submitButton,
+.resendButton {
   background: linear-gradient(to right, #646cff, #7b64ff);
   color: white;
   border: none;
@@ -39,13 +45,17 @@
   width: 100%;
 }
 
-.verifyButton:hover, .submitButton:hover, .resendButton:hover {
+.verifyButton:hover,
+.submitButton:hover,
+.resendButton:hover {
   background: linear-gradient(to right, #535bf2, #6a53f2);
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(100, 108, 255, 0.3);
 }
 
-.verifyButton:disabled, .submitButton:disabled, .resendButton:disabled {
+.verifyButton:disabled,
+.submitButton:disabled,
+.resendButton:disabled {
   background: #bdc3c7;
   cursor: not-allowed;
   transform: none !important;
@@ -110,7 +120,7 @@
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 3px solid rgba(255,255,255,.3);
+  border: 3px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   border-top-color: white;
   animation: spin 1s ease-in-out infinite;
@@ -118,7 +128,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loadingContainer {

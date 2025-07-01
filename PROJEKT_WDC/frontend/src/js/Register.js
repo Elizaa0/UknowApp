@@ -1,53 +1,70 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import styles from "../css/Register.module.css";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import styles from '../css/Register.module.css';
 
+/**
+ * Komponent rejestracji użytkownika.
+ * @component
+ */
 function Register() {
   const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-    password2: ""
+    username: '',
+    email: '',
+    password: '',
+    password2: '',
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  /**
+   * Obsługuje zmianę wartości w polach formularza rejestracji.
+   * @param {Event} e - Zdarzenie zmiany pola.
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
+  /**
+   * Waliduje formularz rejestracji.
+   * @returns {boolean} Czy formularz jest poprawny.
+   */
   const validate = () => {
     const newErrors = {};
 
     if (!formData.username.trim()) {
-      newErrors.username = "Nazwa użytkownika jest wymagana";
+      newErrors.username = 'Nazwa użytkownika jest wymagana';
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = "Email jest wymagany";
+      newErrors.email = 'Email jest wymagany';
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Nieprawidłowy format email";
+      newErrors.email = 'Nieprawidłowy format email';
     }
 
     if (!formData.password) {
-      newErrors.password = "Hasło jest wymagane";
+      newErrors.password = 'Hasło jest wymagane';
     } else if (formData.password.length < 8) {
-      newErrors.password = "Hasło musi mieć co najmniej 8 znaków";
+      newErrors.password = 'Hasło musi mieć co najmniej 8 znaków';
     }
 
     if (formData.password !== formData.password2) {
-      newErrors.password2 = "Hasła nie są identyczne";
+      newErrors.password2 = 'Hasła nie są identyczne';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Obsługuje wysłanie formularza rejestracji.
+   * @async
+   * @param {Event} e - Zdarzenie wysłania formularza.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -56,27 +73,26 @@ function Register() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/users/register/", {
-        method: "POST",
+      const response = await fetch('http://localhost:8000/api/users/register/', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           username: formData.username,
           email: formData.email,
-          password: formData.password
+          password: formData.password,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Wystąpił błąd podczas rejestracji");
+        throw new Error(data.message || 'Wystąpił błąd podczas rejestracji');
       }
 
-      alert("Rejestracja zakończona sukcesem! Możesz się teraz zalogować.");
-      navigate("/login");
-
+      alert('Rejestracja zakończona sukcesem! Możesz się teraz zalogować.');
+      navigate('/login');
     } catch (error) {
       setErrors({ server: error.message });
     } finally {
@@ -89,9 +105,7 @@ function Register() {
       <div className={styles.card}>
         <h2 className={styles.title}>Rejestracja</h2>
 
-        {errors.server && (
-          <div className={styles.alert}>{errors.server}</div>
-        )}
+        {errors.server && <div className={styles.alert}>{errors.server}</div>}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
@@ -102,11 +116,9 @@ function Register() {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className={errors.username ? styles.errorInput : ""}
+              className={errors.username ? styles.errorInput : ''}
             />
-            {errors.username && (
-              <span className={styles.error}>{errors.username}</span>
-            )}
+            {errors.username && <span className={styles.error}>{errors.username}</span>}
           </div>
 
           <div className={styles.formGroup}>
@@ -117,11 +129,9 @@ function Register() {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className={errors.email ? styles.errorInput : ""}
+              className={errors.email ? styles.errorInput : ''}
             />
-            {errors.email && (
-              <span className={styles.error}>{errors.email}</span>
-            )}
+            {errors.email && <span className={styles.error}>{errors.email}</span>}
           </div>
 
           <div className={styles.formGroup}>
@@ -132,11 +142,9 @@ function Register() {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className={errors.password ? styles.errorInput : ""}
+              className={errors.password ? styles.errorInput : ''}
             />
-            {errors.password && (
-              <span className={styles.error}>{errors.password}</span>
-            )}
+            {errors.password && <span className={styles.error}>{errors.password}</span>}
           </div>
 
           <div className={styles.formGroup}>
@@ -147,19 +155,13 @@ function Register() {
               name="password2"
               value={formData.password2}
               onChange={handleChange}
-              className={errors.password2 ? styles.errorInput : ""}
+              className={errors.password2 ? styles.errorInput : ''}
             />
-            {errors.password2 && (
-              <span className={styles.error}>{errors.password2}</span>
-            )}
+            {errors.password2 && <span className={styles.error}>{errors.password2}</span>}
           </div>
 
-          <button
-            type="submit"
-            className={styles.submitButton}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Rejestrowanie..." : "Zarejestruj się"}
+          <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+            {isSubmitting ? 'Rejestrowanie...' : 'Zarejestruj się'}
           </button>
         </form>
 

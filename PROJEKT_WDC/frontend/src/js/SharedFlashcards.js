@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from '../css/SharedFlashcards.module.css';
 
+/**
+ * Komponent wyświetlający udostępniony zestaw fiszek oraz umożliwiający kopiowanie do własnej kolekcji.
+ * @component
+ */
 const SharedFlashcards = () => {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -12,6 +16,10 @@ const SharedFlashcards = () => {
   const [activeCard, setActiveCard] = useState(null);
   const [isFlipped, setIsFlipped] = useState(false);
 
+  /**
+   * Pobiera udostępnione fiszki z API.
+   * @async
+   */
   useEffect(() => {
     const fetchSharedFlashcards = async () => {
       try {
@@ -40,27 +48,43 @@ const SharedFlashcards = () => {
     fetchSharedFlashcards();
   }, [token]);
 
+  /**
+   * Obsługuje kliknięcie na fiszkę.
+   * @param {Object} card - Wybrana fiszka.
+   */
   const handleCardClick = (card) => {
     setActiveCard(card);
   };
 
+  /**
+   * Obsługuje obracanie fiszki (przód/tył).
+   */
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
   };
 
+  /**
+   * Obsługuje kopiowanie zestawu fiszek do kolekcji użytkownika.
+   * @async
+   */
   const handleCopy = async () => {
     try {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        navigate('/login', { state: { redirectTo: `/shared/${token}`, message: 'Zaloguj się, aby skopiować zestaw fiszek' } });
+        navigate('/login', {
+          state: {
+            redirectTo: `/shared/${token}`,
+            message: 'Zaloguj się, aby skopiować zestaw fiszek',
+          },
+        });
         return;
       }
 
       await fetch(`http://localhost:8000/api/shared/${token}/copy/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -87,10 +111,7 @@ const SharedFlashcards = () => {
       <div className={styles.errorContainer}>
         <h2>Błąd dostępu</h2>
         <p>{error}</p>
-        <button
-          className={styles.returnButton}
-          onClick={() => navigate('/')}
-        >
+        <button className={styles.returnButton} onClick={() => navigate('/')}>
           Wróć do strony głównej
         </button>
       </div>
@@ -103,16 +124,10 @@ const SharedFlashcards = () => {
         <h1>{setInfo?.title || 'Udostępniony zestaw fiszek'}</h1>
         <p>Udostępnione przez: {setInfo?.owner || 'Anonimowy'}</p>
         <div className={styles.headerActions}>
-          <button
-            className={styles.copyButton}
-            onClick={handleCopy}
-          >
+          <button className={styles.copyButton} onClick={handleCopy}>
             Kopiuj do mojej kolekcji
           </button>
-          <button
-            className={styles.returnButton}
-            onClick={() => navigate('/')}
-          >
+          <button className={styles.returnButton} onClick={() => navigate('/')}>
             Strona główna
           </button>
         </div>
@@ -122,7 +137,7 @@ const SharedFlashcards = () => {
         <div className={styles.cardsList}>
           <h2>Fiszki w zestawie ({flashcards.length})</h2>
           <ul>
-            {flashcards.map(card => (
+            {flashcards.map((card) => (
               <li
                 key={card.id}
                 className={`${styles.cardItem} ${activeCard?.id === card.id ? styles.active : ''}`}
@@ -160,9 +175,7 @@ const SharedFlashcards = () => {
 
           {activeCard && (
             <div className={styles.cardControls}>
-              <button onClick={handleFlip}>
-                {isFlipped ? 'Pokaż przód' : 'Pokaż tył'}
-              </button>
+              <button onClick={handleFlip}>{isFlipped ? 'Pokaż przód' : 'Pokaż tył'}</button>
             </div>
           )}
         </div>

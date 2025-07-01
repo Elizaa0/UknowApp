@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from '../css/LearningSession.module.css';
 
+/**
+ * Komponent sesji nauki fiszek.
+ * @component
+ */
 const LearningSession = () => {
   const { setId } = useParams();
   const navigate = useNavigate();
@@ -12,12 +16,16 @@ const LearningSession = () => {
   const [sessionStats, setSessionStats] = useState({
     correct: 0,
     incorrect: 0,
-    total: 0
+    total: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [setInfo, setSetInfo] = useState(null);
 
+  /**
+   * Pobiera informacje o zestawie fiszek.
+   * @async
+   */
   const fetchSetInfo = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -27,7 +35,7 @@ const LearningSession = () => {
       }
 
       const response = await fetch(`http://localhost:8000/api/flashcards/sets/${setId}/`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
@@ -43,6 +51,10 @@ const LearningSession = () => {
     }
   }, [setId, navigate]);
 
+  /**
+   * Pobiera fiszki do nauki.
+   * @async
+   */
   const fetchFlashcards = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -53,7 +65,7 @@ const LearningSession = () => {
 
       setLoading(true);
       const response = await fetch(`http://localhost:8000/api/flashcards/sets/${setId}/cards/`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
@@ -63,17 +75,19 @@ const LearningSession = () => {
       const data = await response.json();
       console.log('Pobrane fiszki do nauki:', data);
 
-      const processedCards = Array.isArray(data) ? data.map(card => ({
-        ...card,
-        front: card.front || card.question || '',
-        back: card.back || card.answer || '',
-        category: card.category || 'Bez kategorii',
-      })) : [];
+      const processedCards = Array.isArray(data)
+        ? data.map((card) => ({
+            ...card,
+            front: card.front || card.question || '',
+            back: card.back || card.answer || '',
+            category: card.category || 'Bez kategorii',
+          }))
+        : [];
 
       const shuffledCards = [...processedCards].sort(() => Math.random() - 0.5);
 
       setFlashcards(shuffledCards);
-      setSessionStats(prev => ({ ...prev, total: shuffledCards.length }));
+      setSessionStats((prev) => ({ ...prev, total: shuffledCards.length }));
     } catch (error) {
       console.error('Błąd:', error);
       setError(error.message);
@@ -92,13 +106,17 @@ const LearningSession = () => {
     fetchFlashcards();
   }, [setId, navigate, fetchSetInfo, fetchFlashcards]);
 
+  /**
+   * Obsługuje odpowiedź użytkownika na fiszkę.
+   * @param {boolean} isCorrect - Czy odpowiedź była poprawna.
+   */
   const handleAnswer = (isCorrect) => {
     updateCardProgress(flashcards[currentIndex].id, isCorrect);
 
-    setSessionStats(prev => ({
+    setSessionStats((prev) => ({
       ...prev,
       correct: isCorrect ? prev.correct + 1 : prev.correct,
-      incorrect: !isCorrect ? prev.incorrect + 1 : prev.incorrect
+      incorrect: !isCorrect ? prev.incorrect + 1 : prev.incorrect,
     }));
 
     if (currentIndex < flashcards.length - 1) {
@@ -109,17 +127,26 @@ const LearningSession = () => {
     }
   };
 
+  /**
+   * Aktualizuje postęp nauki dla danej fiszki.
+   * @async
+   * @param {number} cardId - ID fiszki.
+   * @param {boolean} isCorrect - Czy odpowiedź była poprawna.
+   */
   const updateCardProgress = async (cardId, isCorrect) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcards/${cardId}/update-status/`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ quality: isCorrect ? 5 : 0 })
-      });
+      const response = await fetch(
+        `http://localhost:8000/api/flashcards/${cardId}/update-status/`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ quality: isCorrect ? 5 : 0 }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Nie udało się zaktualizować postępu karty');
@@ -133,12 +160,15 @@ const LearningSession = () => {
     }
   };
 
+  /**
+   * Kończy sesję nauki i przekierowuje na pulpit.
+   */
   const finishSession = () => {
     navigate('/dashboard', {
       state: {
         sessionCompleted: true,
-        stats: sessionStats
-      }
+        stats: sessionStats,
+      },
     });
   };
 
@@ -156,10 +186,7 @@ const LearningSession = () => {
       <div className={styles.errorContainer}>
         <h2>Wystąpił błąd</h2>
         <p>{error}</p>
-        <button
-          className={styles.returnButton}
-          onClick={() => navigate('/dashboard')}
-        >
+        <button className={styles.returnButton} onClick={() => navigate('/dashboard')}>
           Wróć do pulpitu
         </button>
       </div>
@@ -171,10 +198,7 @@ const LearningSession = () => {
       <div className={styles.emptyContainer}>
         <h2>Brak fiszek do nauki</h2>
         <p>Ten zestaw nie zawiera żadnych fiszek do nauki.</p>
-        <button
-          className={styles.returnButton}
-          onClick={() => navigate('/dashboard')}
-        >
+        <button className={styles.returnButton} onClick={() => navigate('/dashboard')}>
           Wróć do pulpitu
         </button>
       </div>
@@ -188,11 +212,13 @@ const LearningSession = () => {
       <header className={styles.sessionHeader}>
         <h2>{setInfo?.name || 'Sesja nauki'}</h2>
         <div className={styles.progress}>
-          <span>Karta {currentIndex + 1} z {flashcards.length}</span>
+          <span>
+            Karta {currentIndex + 1} z {flashcards.length}
+          </span>
           <div className={styles.progressBar}>
             <div
               className={styles.progressFill}
-              style={{ width: `${((currentIndex) / flashcards.length) * 100}%` }}
+              style={{ width: `${(currentIndex / flashcards.length) * 100}%` }}
             ></div>
           </div>
         </div>
@@ -213,12 +239,8 @@ const LearningSession = () => {
         className={`${styles.flashcard} ${isFlipped ? styles.flipped : ''}`}
         onClick={() => setIsFlipped(!isFlipped)}
       >
-        <div className={styles.cardFace + ' ' + styles.front}>
-          {currentCard.front}
-        </div>
-        <div className={styles.cardFace + ' ' + styles.back}>
-          {currentCard.back}
-        </div>
+        <div className={styles.cardFace + ' ' + styles.front}>{currentCard.front}</div>
+        <div className={styles.cardFace + ' ' + styles.back}>{currentCard.back}</div>
       </div>
 
       <div className={styles.actions}>
@@ -228,16 +250,10 @@ const LearningSession = () => {
           </button>
         ) : (
           <>
-            <button
-              className={styles.incorrectButton}
-              onClick={() => handleAnswer(false)}
-            >
+            <button className={styles.incorrectButton} onClick={() => handleAnswer(false)}>
               Nie znam
             </button>
-            <button
-              className={styles.correctButton}
-              onClick={() => handleAnswer(true)}
-            >
+            <button className={styles.correctButton} onClick={() => handleAnswer(true)}>
               Znam
             </button>
           </>

@@ -1,3 +1,7 @@
+/*
+  Plik: ErrorBoundary.module.css
+  Style dla komponentu obsługi błędów (Error Boundary).
+*/
 .errorContainer {
   display: flex;
   align-items: center;

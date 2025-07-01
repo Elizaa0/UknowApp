@@ -1,3 +1,7 @@
+/*
+  Plik: SharedFlashcards.module.css
+  Style dla widoku udostępnionych fiszek oraz interakcji z zestawem.
+*/
 .sharedContainer {
   max-width: 1200px;
   margin: 0 auto;
@@ -148,7 +152,8 @@
   transform: rotateY(180deg);
 }
 
-.cardFront, .cardBack {
+.cardFront,
+.cardBack {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -209,7 +214,8 @@
   color: #666;
 }
 
-.loadingContainer, .errorContainer {
+.loadingContainer,
+.errorContainer {
   text-align: center;
   margin: 50px auto;
   padding: 30px;
@@ -230,8 +236,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .errorContainer h2 {

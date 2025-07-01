@@ -1,3 +1,7 @@
+/*
+  Plik: Dashboard.module.css
+  Style dla pulpitu użytkownika (dashboard), w tym układ, karty, statystyki i responsywność.
+*/
 .dashboard {
   max-width: 1400px;
   margin: 0 auto;
@@ -26,7 +30,11 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-color, #646cff) 0%, var(--secondary-color, #7b64ff) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color, #646cff) 0%,
+    var(--secondary-color, #7b64ff) 100%
+  );
   color: white;
   display: flex;
   align-items: center;
@@ -482,7 +490,8 @@
   transform: rotateY(180deg);
 }
 
-.cardFront, .cardBack {
+.cardFront,
+.cardBack {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -859,7 +868,9 @@
   border-radius: 8px;
   color: white;
   z-index: 1000;
-  animation: fadeIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+  animation:
+    fadeIn 0.3s ease,
+    fadeOut 0.3s ease 2.7s;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   font-weight: 500;
 }
@@ -873,13 +884,25 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-10px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
 }
 
 /* Loading animation */
@@ -903,8 +926,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Learning mode styles */
@@ -1183,7 +1210,8 @@ progress::-webkit-progress-value {
     padding: 2rem 1.5rem;
   }
 
-  .cardFront, .cardBack {
+  .cardFront,
+  .cardBack {
     font-size: 1.2rem;
   }
 }
@@ -1219,7 +1247,7 @@ progress::-webkit-progress-value {
 }
 
 .optionButton.active {
-  background: #4CAF50;
+  background: #4caf50;
   color: white;
 }
 .generatedFlashcards {
@@ -1253,7 +1281,7 @@ progress::-webkit-progress-value {
 }
 
 .optionButton.active {
-  background: #4CAF50;
+  background: #4caf50;
   color: white;
 }
 .dashboard {
@@ -1280,8 +1308,12 @@ progress::-webkit-progress-value {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .statsContainer {
@@ -1339,7 +1371,7 @@ progress::-webkit-progress-value {
   background: #fff;
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .scheduleTable {
@@ -1348,7 +1380,8 @@ progress::-webkit-progress-value {
   margin-top: 1.5rem;
 }
 
-.scheduleTable th, .scheduleTable td {
+.scheduleTable th,
+.scheduleTable td {
   padding: 1rem;
   border-bottom: 1px solid #e0e6ed;
   text-align: left;

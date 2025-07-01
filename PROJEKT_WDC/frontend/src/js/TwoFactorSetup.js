@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import styles from "../css/TwoFactorAuth.module.css";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import styles from '../css/TwoFactorAuth.module.css';
 
+/**
+ * Komponent konfiguracji weryfikacji dwuetapowej (2FA) i wyświetlania kodu QR.
+ * @component
+ */
 function TwoFactorSetup() {
-  const [qrCode, setQrCode] = useState("");
-  const [error, setError] = useState("");
+  const [qrCode, setQrCode] = useState('');
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  /**
+   * Pobiera dane do konfiguracji 2FA (kod QR) z API.
+   * @async
+   */
   useEffect(() => {
     const fetchSetupData = async () => {
       try {
@@ -20,10 +28,10 @@ function TwoFactorSetup() {
         const response = await fetch('http://localhost:8000/api/users/2fa/setup/', {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
-          credentials: 'include'
+          credentials: 'include',
         });
 
         if (!response.ok) {
@@ -37,7 +45,7 @@ function TwoFactorSetup() {
         }
 
         setQrCode(data.qr_code);
-        setError("");
+        setError('');
       } catch (err) {
         setError(err.message);
       } finally {
@@ -48,10 +56,12 @@ function TwoFactorSetup() {
     fetchSetupData();
   }, [navigate]);
 
+  /**
+   * Przekierowuje użytkownika do weryfikacji kodu 2FA.
+   */
   const handleVerifyRedirect = () => {
-    navigate("/2fa-verify");
+    navigate('/2fa-verify');
   };
-
 
   return (
     <div className={styles.container}>
@@ -61,10 +71,7 @@ function TwoFactorSetup() {
         {error ? (
           <div className={styles.errorAlert}>
             <p>{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className={styles.verifyButton}
-            >
+            <button onClick={() => window.location.reload()} className={styles.verifyButton}>
               Spróbuj ponownie
             </button>
           </div>
@@ -80,7 +87,7 @@ function TwoFactorSetup() {
               src={qrCode}
               alt="Kod QR 2FA"
               className={styles.qrImage}
-              onError={() => setError("Nie udało się załadować kodu QR")}
+              onError={() => setError('Nie udało się załadować kodu QR')}
             />
 
             <button

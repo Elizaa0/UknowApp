@@ -1,3 +1,7 @@
+/*
+  Plik: FlashcardEditor.module.css
+  Style dla edytora fiszek (tworzenie i edycja kart).
+*/
 .editorForm {
   background-color: #fff;
   border-radius: 8px;
@@ -83,7 +87,7 @@
 
 .addCategoryButton {
   padding: 8px 12px;
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   border: none;
   border-radius: 4px;
@@ -123,7 +127,9 @@ label {
   color: #333;
 }
 
-input, textarea, select {
+input,
+textarea,
+select {
   padding: 0.75rem;
   border: 1px solid var(--primary-color, #81d2d6);
   border-radius: 4px;

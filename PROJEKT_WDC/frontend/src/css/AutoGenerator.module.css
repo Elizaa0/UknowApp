@@ -1,3 +1,7 @@
+/*
+  Plik: AutoGenerator.module.css
+  Style dla komponentu automatycznego generatora fiszek.
+*/
 .container {
   padding: 20px;
   background: white;
@@ -94,7 +98,7 @@
 }
 
 .tabButton.active::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: -1px;
   left: 0;
@@ -128,7 +132,7 @@
   resize: vertical;
 }
 
-.formGroup input[type="file"] {
+.formGroup input[type='file'] {
   display: block;
   width: 100%;
   padding: 10px;

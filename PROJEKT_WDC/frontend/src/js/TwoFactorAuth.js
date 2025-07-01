@@ -2,18 +2,31 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../css/TwoFactorAuth.module.css';
 
+/**
+ * Komponent obsługujący weryfikację dwuetapową (2FA).
+ * @component
+ */
 function TwoFactorAuth() {
   const [code, setCode] = useState('');
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  /**
+   * Obsługuje zmianę kodu weryfikacyjnego.
+   * @param {Event} e - Zdarzenie zmiany pola kodu.
+   */
   const handleCodeChange = (e) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
     setCode(value);
     if (error) setError(null);
   };
 
+  /**
+   * Obsługuje wysłanie formularza weryfikacji kodu 2FA.
+   * @async
+   * @param {Event} e - Zdarzenie wysłania formularza.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -35,7 +48,7 @@ function TwoFactorAuth() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         credentials: 'include',
         body: JSON.stringify({ code }),
@@ -64,7 +77,6 @@ function TwoFactorAuth() {
       }
 
       navigate('/dashboard', { replace: true });
-
     } catch (err) {
       console.error('Błąd weryfikacji:', err);
 
@@ -83,6 +95,10 @@ function TwoFactorAuth() {
     }
   };
 
+  /**
+   * Obsługuje ponowne wysłanie kodu weryfikacyjnego.
+   * @async
+   */
   const handleResendCode = async () => {
     try {
       const token = sessionStorage.getItem('tempToken');
@@ -91,9 +107,9 @@ function TwoFactorAuth() {
       const response = await fetch('http://localhost:8000/api/users/2fa/resend/', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        credentials: 'include'
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -149,11 +165,12 @@ function TwoFactorAuth() {
                 <span className={styles.spinner}></span>
                 Weryfikowanie...
               </>
-            ) : 'Zweryfikuj'}
+            ) : (
+              'Zweryfikuj'
+            )}
           </button>
 
-          <div className={styles.footer}>
-          </div>
+          <div className={styles.footer}></div>
         </form>
       </div>
     </div>

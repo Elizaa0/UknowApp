@@ -1,3 +1,7 @@
+/*
+  Plik: PersonalizationSettings.module.css
+  Style dla panelu ustawień personalizacji interfejsu użytkownika.
+*/
 :root {
   /* background-color: white; */
 }
@@ -110,8 +114,7 @@
 }
 
 .preview-list {
-  background-image:
-    linear-gradient(to bottom, #fff 10px, #eee 10px, #eee 11px, #fff 11px);
+  background-image: linear-gradient(to bottom, #fff 10px, #eee 10px, #eee 11px, #fff 11px);
   background-size: 100% 20px;
 }
 
@@ -186,17 +189,27 @@
   background-color: #d4edda;
   color: #155724;
   border-radius: 4px;
-  animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+  animation:
+    fadeIn 0.3s,
+    fadeOut 0.3s 2.7s;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 @media (max-width: 768px) {

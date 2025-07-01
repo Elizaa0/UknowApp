@@ -1,6 +1,10 @@
 import React, { Component } from 'react';
 import styles from '../css/ErrorBoundary.module.css';
 
+/**
+ * Komponent wyłapujący błędy w aplikacji React (Error Boundary).
+ * @component
+ */
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -16,10 +20,17 @@ class ErrorBoundary extends Component {
     console.error('Error caught by boundary:', error, errorInfo);
   }
 
+  /**
+   * Obsługuje ponowne załadowanie aplikacji po błędzie.
+   */
   handleReload = () => {
     window.location.reload();
   };
 
+  /**
+   * Renderuje zawartość komponentu ErrorBoundary.
+   * @returns {React.ReactNode}
+   */
   render() {
     if (this.state.hasError) {
       return (
@@ -37,10 +48,7 @@ class ErrorBoundary extends Component {
             )}
 
             <div className={styles.actions}>
-              <button
-                className={styles.reloadButton}
-                onClick={this.handleReload}
-              >
+              <button className={styles.reloadButton} onClick={this.handleReload}>
                 Odśwież aplikację
               </button>
               <a href="/frontend/public" className={styles.homeLink}>

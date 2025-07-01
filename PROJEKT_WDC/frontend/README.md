@@ -1,70 +1,80 @@
-# Getting Started with Create React App
+# Dokumentacja techniczna frontendu
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Technologie
 
-## Available Scripts
+- **React** (v19) – główny framework do budowy interfejsu użytkownika
+- **React Router DOM** – obsługa routingu SPA
+- **Axios** – komunikacja z backendem (REST API)
+- **CSS Modules** – stylowanie komponentów (osobne pliki `.module.css` dla każdego większego komponentu)
+- **JSDoc** – generowanie dokumentacji kodu źródłowego
+- **ESLint, Prettier** – narzędzia do utrzymania jakości kodu
 
-In the project directory, you can run:
+## Struktura katalogów
 
-### `npm start`
+```
+frontend/
+├── docs/           # Wygenerowana dokumentacja JSDoc (HTML)
+├── public/         # Pliki publiczne (index.html, favicon, manifest)
+├── src/
+│   ├── js/         # Komponenty React (każdy w osobnym pliku)
+│   ├── css/        # Style CSS Modules (np. Dashboard.module.css)
+│   ├── config.js   # Konfiguracja aplikacji
+│   ├── index.js    # Główny plik startowy React
+│   └── index.css   # Style globalne
+└── jsdoc.json      # Konfiguracja JSDoc
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Architektura aplikacji
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Punkt wejściowy:** `src/index.js` – renderuje główny komponent `App`.
+- **Routing:** Definiowany w `src/js/App.js` za pomocą `react-router-dom`. Obsługiwane ścieżki to m.in. `/`, `/login`, `/register`, `/dashboard`, `/learn/:setId`, `/public/:uuid`, `/shared/:token`, `/2fa-verify`, `/2fa-setup`.
+- **Główne komponenty:**
+  - `App.js` – główny kontener, obsługuje routing i ErrorBoundary
+  - `Dashboard.js` – panel użytkownika, zarządzanie fiszkami
+  - `LearningSession.js` – tryb nauki
+  - `FlashcardEditor.js` – edycja fiszek
+  - `Login.js`, `Register.js` – autoryzacja
+  - `TwoFactorAuth.js`, `TwoFactorSetup.js` – obsługa 2FA
+  - `SharedFlashcards.js`, `PublicShare.js`, `ShareManager.js` – udostępnianie fiszek
+  - `ErrorBoundary.js` – obsługa błędów na poziomie aplikacji
+- **Style:**
+  - Każdy większy komponent posiada własny plik `.module.css` w `src/css/`
+  - Style globalne w `src/css/global.css` i `src/index.css`
 
-### `npm test`
+## Uruchamianie i budowanie
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+1. Instalacja zależności:
+   ```bash
+   npm install
+   ```
+2. Uruchomienie w trybie developerskim:
+   ```bash
+   npm start
+   ```
+3. Budowanie wersji produkcyjnej:
+   ```bash
+   npm run build
+   ```
+4. Lintowanie i formatowanie kodu:
+   ```bash
+   npm run lint
+   npm run format
+   ```
 
-### `npm run build`
+## Testy
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Testy jednostkowe znajdują się w plikach `*.test.js` w katalogu `src/js/`.
+Uruchomienie testów:
+```bash
+npm test
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Dokumentacja kodu (JSDoc)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Komentarze JSDoc znajdują się w plikach źródłowych w `src/js/`. Dokumentację HTML generuje się poleceniem:
+```bash
+npm run docs
+```
+Wygenerowane pliki znajdziesz w katalogu `docs/`.
 
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---

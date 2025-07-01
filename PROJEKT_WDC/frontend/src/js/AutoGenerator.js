@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import styles from '../css/AutoGenerator.module.css';
 import { API_URL } from '../config';
 
+/**
+ * Komponent do automatycznego generowania fiszek na podstawie pliku lub tekstu.
+ * @component
+ * @param {Object} props
+ * @param {function} props.onGenerate - Funkcja wywoływana po wygenerowaniu fiszek.
+ * @param {function} props.onClose - Funkcja zamykająca generator.
+ * @param {Object} props.activeSet - Aktywny zestaw fiszek.
+ */
 const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
   const [file, setFile] = useState(null);
   const [text, setText] = useState('');
@@ -10,17 +18,31 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  /**
+   * Obsługuje zmianę pliku wejściowego.
+   * @param {Event} e - Zdarzenie zmiany pliku.
+   */
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
     setText('');
     setError('');
   };
 
+  /**
+   * Obsługuje zmianę tekstu wejściowego.
+   * @param {Event} event - Zdarzenie zmiany tekstu.
+   */
   const handleTextChange = (event) => {
     setText(event.target.value);
     setError('');
   };
 
+  /**
+   * Odświeża token JWT użytkownika.
+   * @async
+   * @returns {Promise<string>} Nowy token dostępu.
+   * @throws {Error} Jeśli nie uda się odświeżyć tokenu.
+   */
   const refreshToken = async () => {
     try {
       const refreshToken = localStorage.getItem('refreshToken');
@@ -33,7 +55,7 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ refresh: refreshToken })
+        body: JSON.stringify({ refresh: refreshToken }),
       });
 
       if (!response.ok) {
@@ -49,6 +71,11 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
     }
   };
 
+  /**
+   * Wysyła plik do API w celu wygenerowania fiszek.
+   * @async
+   * @param {File} file - Plik do przesłania.
+   */
   const handleFileUpload = async (file) => {
     try {
       console.log('Rozpoczynam przesyłanie pliku:', file.name);
@@ -75,11 +102,11 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
         const request = {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${currentToken}`,
-            'Accept': 'application/json'
+            Authorization: `Bearer ${currentToken}`,
+            Accept: 'application/json',
           },
           credentials: 'include',
-          body: formData
+          body: formData,
         };
         console.log('Konfiguracja żądania:', request);
         return fetch(`${API_URL}/flashcards/generate-flashcards/upload/`, request);
@@ -105,7 +132,12 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Szczegóły błędu:', errorData);
-        throw new Error(errorData.detail || errorData.error || errorData.message || 'Nie udało się wygenerować fiszek z tego tekstu');
+        throw new Error(
+          errorData.detail ||
+            errorData.error ||
+            errorData.message ||
+            'Nie udało się wygenerować fiszek z tego tekstu'
+        );
       }
 
       const data = await response.json();
@@ -123,6 +155,11 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
     }
   };
 
+  /**
+   * Obsługuje wysłanie formularza generowania fiszek.
+   * @async
+   * @param {Event} event - Zdarzenie wysłania formularza.
+   */
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError('');
@@ -141,12 +178,16 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
           return fetch(`${API_URL}/flashcards/generate-flashcards/`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${currentToken}`,
+              Authorization: `Bearer ${currentToken}`,
               'Content-Type': 'application/json',
-              'Accept': 'application/json'
+              Accept: 'application/json',
             },
             credentials: 'include',
-            body: JSON.stringify({ content: text, category: category.trim() === '' ? 'Bez kategorii' : category.trim(), difficulty })
+            body: JSON.stringify({
+              content: text,
+              category: category.trim() === '' ? 'Bez kategorii' : category.trim(),
+              difficulty,
+            }),
           });
         };
 
@@ -166,7 +207,12 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.detail || errorData.error || errorData.message || 'Nie udało się wygenerować fiszek z tego tekstu');
+          throw new Error(
+            errorData.detail ||
+              errorData.error ||
+              errorData.message ||
+              'Nie udało się wygenerować fiszek z tego tekstu'
+          );
         }
 
         const data = await response.json();
@@ -193,13 +239,13 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
           <input
             type="text"
             value={category}
-            onChange={e => setCategory(e.target.value)}
+            onChange={(e) => setCategory(e.target.value)}
             placeholder="Wpisz kategorię (np. Angielski, Biologia)"
           />
         </div>
         <div className={styles.formGroup}>
           <label>Trudność</label>
-          <select value={difficulty} onChange={e => setDifficulty(e.target.value)}>
+          <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)}>
             <option value="easy">Łatwa</option>
             <option value="medium">Średnia</option>
             <option value="hard">Trudna</option>
@@ -230,8 +276,8 @@ const AutoGenerator = ({ onGenerate, onClose, activeSet }) => {
           />
         </div>
         {error && <p className={styles.error}>{error}</p>}
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className={styles.button}
           disabled={isLoading || (!file && !text.trim())}
         >

@@ -27,7 +27,10 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "docs": "jsdoc -c jsdoc.json",
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
   },
   "eslintConfig": {
     "extends": [
@@ -49,7 +52,13 @@
   },
   "proxy": "http://localhost:8000",
   "devDependencies": {
+    "@eslint/js": "^9.30.0",
     "buffer": "^6.0.3",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.3.0",
+    "jsdoc": "^4.0.4",
+    "prettier": "^3.6.2",
     "process": "^0.11.10",
     "react-app-rewired": "^2.2.1"
   }

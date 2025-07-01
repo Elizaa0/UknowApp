@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import styles from '../css/ShareManager.module.css';
 
+/**
+ * Komponent zarządzający udostępnianiem zestawu fiszek.
+ * @component
+ * @param {Object} props
+ * @param {number|string} props.flashcardSetId - ID zestawu fiszek do udostępnienia.
+ */
 const ShareManager = ({ flashcardSetId }) => {
   const [shareLink, setShareLink] = useState('');
   const [permissions, setPermissions] = useState('view');
@@ -13,11 +19,14 @@ const ShareManager = ({ flashcardSetId }) => {
     const fetchExistingLinks = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8000/api/flashcards/${flashcardSetId}/shares/`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          `http://localhost:8000/api/flashcards/${flashcardSetId}/shares/`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (!response.ok) throw new Error('Błąd ładowania udostępnień');
 
@@ -31,25 +40,32 @@ const ShareManager = ({ flashcardSetId }) => {
     fetchExistingLinks();
   }, [flashcardSetId]);
 
+  /**
+   * Generuje nowy link do udostępnienia zestawu fiszek.
+   * @async
+   */
   const generateShareLink = async () => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8000/api/flashcards/${flashcardSetId}/share/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          permission: permissions,
-          expires_at: expiryDate || null,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:8000/api/flashcards/${flashcardSetId}/share/`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            permission: permissions,
+            expires_at: expiryDate || null,
+          }),
+        }
+      );
 
       const data = await response.json();
       setShareLink(data.share_url);
-      setExistingLinks(prev => [...prev, data.share]);
+      setExistingLinks((prev) => [...prev, data.share]);
     } catch (error) {
       console.error('Błąd generowania linku:', error);
     } finally {
@@ -57,23 +73,31 @@ const ShareManager = ({ flashcardSetId }) => {
     }
   };
 
+  /**
+   * Kopiuje link udostępniania do schowka.
+   */
   const copyToClipboard = () => {
     navigator.clipboard.writeText(shareLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  /**
+   * Odwołuje udostępnienie zestawu fiszek.
+   * @async
+   * @param {number|string} shareId - ID udostępnienia do odwołania.
+   */
   const revokeShare = async (shareId) => {
     try {
       const token = localStorage.getItem('token');
       await fetch(`http://localhost:8000/api/shares/${shareId}/revoke/`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
-      setExistingLinks(prev => prev.filter(link => link.id !== shareId));
+      setExistingLinks((prev) => prev.filter((link) => link.id !== shareId));
       if (shareLink && shareLink.includes(shareId)) {
         setShareLink('');
       }
@@ -89,10 +113,7 @@ const ShareManager = ({ flashcardSetId }) => {
       <div className={styles.shareControls}>
         <div className={styles.formGroup}>
           <label>Uprawnienia</label>
-          <select
-            value={permissions}
-            onChange={(e) => setPermissions(e.target.value)}
-          >
+          <select value={permissions} onChange={(e) => setPermissions(e.target.value)}>
             <option value="view">Tylko przeglądanie</option>
             <option value="edit">Edycja</option>
             <option value="duplicate">Kopiowanie</option>
@@ -109,27 +130,15 @@ const ShareManager = ({ flashcardSetId }) => {
           />
         </div>
 
-        <button
-          className={styles.generateButton}
-          onClick={generateShareLink}
-          disabled={isLoading}
-        >
+        <button className={styles.generateButton} onClick={generateShareLink} disabled={isLoading}>
           {isLoading ? 'Generowanie...' : 'Generuj link'}
         </button>
       </div>
 
       {shareLink && (
         <div className={styles.linkContainer}>
-          <input
-            type="text"
-            value={shareLink}
-            readOnly
-            className={styles.linkInput}
-          />
-          <button
-            className={styles.copyButton}
-            onClick={copyToClipboard}
-          >
+          <input type="text" value={shareLink} readOnly className={styles.linkInput} />
+          <button className={styles.copyButton} onClick={copyToClipboard}>
             {copied ? 'Skopiowano!' : 'Kopiuj'}
           </button>
         </div>
@@ -139,7 +148,7 @@ const ShareManager = ({ flashcardSetId }) => {
         <div className={styles.existingLinks}>
           <h4>Aktywne udostępnienia</h4>
           <ul>
-            {existingLinks.map(link => (
+            {existingLinks.map((link) => (
               <li key={link.id} className={styles.linkItem}>
                 <div className={styles.linkInfo}>
                   <span className={styles.linkPermission}>
@@ -154,10 +163,7 @@ const ShareManager = ({ flashcardSetId }) => {
                     </span>
                   )}
                 </div>
-                <button
-                  className={styles.revokeButton}
-                  onClick={() => revokeShare(link.id)}
-                >
+                <button className={styles.revokeButton} onClick={() => revokeShare(link.id)}>
                   Odwołaj
                 </button>
               </li>
@@ -169,12 +175,21 @@ const ShareManager = ({ flashcardSetId }) => {
   );
 };
 
+/**
+ * Zwraca etykietę uprawnienia na podstawie typu.
+ * @param {string} permission - Typ uprawnienia.
+ * @returns {string}
+ */
 const getPermissionLabel = (permission) => {
   switch (permission) {
-    case 'view': return 'Przeglądanie';
-    case 'edit': return 'Edycja';
-    case 'duplicate': return 'Kopiowanie';
-    default: return permission;
+    case 'view':
+      return 'Przeglądanie';
+    case 'edit':
+      return 'Edycja';
+    case 'duplicate':
+      return 'Kopiowanie';
+    default:
+      return permission;
   }
 };
 

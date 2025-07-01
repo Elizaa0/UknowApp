@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import styles from '../css/FlashcardEditor.module.css';
 
+/**
+ * Komponent do edycji i tworzenia fiszek.
+ * @component
+ * @param {Object} props
+ * @param {function} props.onSave - Funkcja wywoływana po zapisaniu fiszki.
+ * @param {Object} [props.initialData] - Dane początkowe fiszki do edycji.
+ */
 const FlashcardEditor = ({ onSave, initialData }) => {
   const [front, setFront] = useState(initialData?.front || '');
   const [back, setBack] = useState(initialData?.back || '');
@@ -9,6 +16,10 @@ const FlashcardEditor = ({ onSave, initialData }) => {
   const [tags, setTags] = useState(initialData?.tags?.join(', ') || '');
   const [errors, setErrors] = useState({});
 
+  /**
+   * Waliduje formularz edycji fiszki.
+   * @returns {boolean} Czy formularz jest poprawny.
+   */
   const validateForm = () => {
     const newErrors = {};
 
@@ -24,6 +35,10 @@ const FlashcardEditor = ({ onSave, initialData }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Obsługuje wysłanie formularza edycji fiszki.
+   * @param {Event} e - Zdarzenie wysłania formularza.
+   */
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -33,8 +48,8 @@ const FlashcardEditor = ({ onSave, initialData }) => {
 
     const tagsArray = tags
       .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag);
+      .map((tag) => tag.trim())
+      .filter((tag) => tag);
 
     const finalCategory = category.trim() === '' ? 'Bez kategorii' : category.trim();
 
@@ -45,7 +60,7 @@ const FlashcardEditor = ({ onSave, initialData }) => {
       difficulty,
       tags: tagsArray,
       question: front,
-      answer: back
+      answer: back,
     });
 
     setFront('');

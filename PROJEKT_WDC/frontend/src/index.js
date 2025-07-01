@@ -1,3 +1,6 @@
+/**
+ * Główny plik startowy aplikacji React. Inicjalizuje i renderuje główny komponent aplikacji.
+ */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';

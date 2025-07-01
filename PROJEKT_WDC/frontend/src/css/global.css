@@ -1,3 +1,7 @@
+/*
+  Plik: global.css
+  Globalne style aplikacji, resetowanie domyślnych styli i podstawowe zmienne.
+*/
 :root {
   /* Default light theme */
   --primary-color: #646cff;
@@ -65,13 +69,20 @@ button:hover {
   filter: brightness(0.95);
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   font-family: var(--font-family);
   font-size: var(--base-font-size);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-family);
   color: var(--primary-color);
   font-weight: var(--font-weight);
-} 
+}

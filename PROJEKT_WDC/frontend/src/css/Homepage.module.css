@@ -1,3 +1,7 @@
+/*
+  Plik: Homepage.module.css
+  Style dla strony głównej aplikacji.
+*/
 .container {
   display: flex;
   justify-content: center;
@@ -105,5 +109,5 @@
 }
 
 .mainPanel {
-   background: var(--background-panel, #fff);
+  background: var(--background-panel, #fff);
 }
