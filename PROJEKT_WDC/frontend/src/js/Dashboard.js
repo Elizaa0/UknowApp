@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styles from '../css/Dashboard.module.css';
 import FlashcardEditor from './FlashcardEditor';
 import AutoGenerator from './AutoGenerator';
-import PersonalizationSettings from './PersonalizationSettings';
 import ShareManager from './ShareManager';
+import PersonalizationSettings from './PersonalizationSettings';
 
 const Dashboard = () => {
   const [userData, setUserData] = useState(null);
@@ -39,6 +39,7 @@ const Dashboard = () => {
   const [shareLink, setShareLink] = useState('');
   const [shareError, setShareError] = useState('');
   const [activeStatCategory, setActiveStatCategory] = useState('all');
+  const [layout, setLayout] = useState('grid');
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -433,6 +434,17 @@ const Dashboard = () => {
     return true;
   });
 
+  const filteredFlashcards = filteredByStat.filter(card => {
+    const categoryMatch = !filterCategory || (typeof card.category === 'object' ? card.category.name : card.category) === filterCategory;
+    const search = searchTerm.trim().toLowerCase();
+    const searchMatch = !search ||
+      (card.front && card.front.toLowerCase().includes(search)) ||
+      (card.back && card.back.toLowerCase().includes(search)) ||
+      (card.question && card.question.toLowerCase().includes(search)) ||
+      (card.answer && card.answer.toLowerCase().includes(search));
+    return categoryMatch && searchMatch;
+  });
+
   const categories = [...new Set(flashcards.map(card => card.category || 'Bez kategorii'))];
 
   const handleTogglePublic = async (setId, isPublic) => {
@@ -530,6 +542,27 @@ const Dashboard = () => {
       fetchFlashcards(activeSet.id);
     }
   }, [activeSet, fetchFlashcards]);
+
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('appSettings');
+    if (savedSettings) {
+      const { theme, layout: savedLayout, fontSize } = JSON.parse(savedSettings);
+      const themes = [
+        { id: 'default', colors: { primary: '#81d2d6', secondary: '#f5f7fa', background: '#f8f9ff', text: '#2c3e50' } },
+        { id: 'dark', colors: { primary: '#2c3e50', secondary: '#34495e', background: '#23272f', text: '#f5f7fa' } },
+        { id: 'purple', colors: { primary: '#9b59b6', secondary: '#8e44ad', background: '#f5e9ff', text: '#2c3e50' } },
+      ];
+      const selectedTheme = themes.find(t => t.id === theme) || themes[0];
+      document.documentElement.style.setProperty('--primary-color', selectedTheme.colors.primary);
+      document.documentElement.style.setProperty('--secondary-color', selectedTheme.colors.secondary);
+      document.documentElement.style.setProperty('--base-font-size', `${fontSize || 16}px`);
+      document.documentElement.style.setProperty('--background-main', selectedTheme.colors.background);
+      document.documentElement.style.setProperty('--text-color', selectedTheme.colors.text);
+      document.body.classList.remove('layout-grid', 'layout-list', 'layout-cards');
+      document.body.classList.add(`layout-${savedLayout || 'grid'}`);
+      setLayout(savedLayout || 'grid');
+    }
+  }, [activeTab]);
 
   if (loading) {
     return (
@@ -832,19 +865,18 @@ const Dashboard = () => {
                         </button>
                       </div>
                     ) : filteredByStat.length > 0 ? (
-                      <ul className={styles.cardGrid}>
-                        {filteredByStat.map(card => (
+                      <ul className={`${styles.cardGrid} ${styles[layout]}`}>
+                        {filteredFlashcards.map(card => (
                           <li key={card.id} className={styles.flashcardItem}>
                             <div className={styles.cardHeader}>
                               <span className={styles.cardCategory}>{typeof card.category === 'object' ? card.category.name : card.category || 'Bez kategorii'}</span>
-                              <span className={`${styles.difficulty} ${styles[card.difficulty || 'medium']}`}>
-                                {card.difficulty === 'easy' ? 'Łatwa' :
-                                 card.difficulty === 'medium' ? 'Średnia' : 'Trudna'}
-                              </span>
+                              <span className={`${styles.difficulty} ${styles[card.difficulty || 'medium']}`}>{card.difficulty === 'easy' ? 'Łatwa' : card.difficulty === 'medium' ? 'Średnia' : 'Trudna'}</span>
                             </div>
-                            <div className={styles.cardContent}>
-                              <div className={styles.cardFront}>{card.front || card.question || '(Brak pytania)'}</div>
-                              <div className={styles.cardBack}>{card.back || card.answer || '(Brak odpowiedzi)'}</div>
+                            <div className={styles.cardFlipWrapper}>
+                              <div className={styles.cardFlip}>
+                                <div className={styles.cardFront}>{card.front || card.question || '(Brak pytania)'}</div>
+                                <div className={styles.cardBack}>{card.back || card.answer || '(Brak odpowiedzi)'}</div>
+                              </div>
                             </div>
                             <div className={styles.cardFooter}>
                               {card.tags?.length > 0 && (
@@ -854,12 +886,7 @@ const Dashboard = () => {
                                   ))}
                                 </div>
                               )}
-                              <button
-                                className={styles.deleteCardButton}
-                                onClick={() => deleteFlashcard(card.id)}
-                              >
-                                Usuń
-                              </button>
+                              <button className={styles.deleteCardButton} onClick={() => deleteFlashcard(card.id)}>Usuń</button>
                             </div>
                           </li>
                         ))}

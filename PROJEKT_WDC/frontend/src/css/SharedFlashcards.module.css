@@ -30,7 +30,7 @@
 }
 
 .copyButton {
-  background-color: #81d2d6;
+  background-color: var(--primary-color, #81d2d6);
   color: white;
   border: none;
   border-radius: 4px;
@@ -91,6 +91,8 @@
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
+  font-family: var(--font-family);
+  font-size: var(--base-font-size);
 }
 
 .cardItem:hover {
@@ -127,6 +129,8 @@
   height: 300px;
   perspective: 1000px;
   cursor: pointer;
+  font-family: var(--font-family);
+  font-size: var(--base-font-size);
 }
 
 .cardFace {
@@ -136,6 +140,8 @@
   text-align: center;
   transition: transform 0.6s;
   transform-style: preserve-3d;
+  font-family: var(--font-family);
+  font-size: var(--base-font-size);
 }
 
 .flashcard.flipped .cardFace {
@@ -153,16 +159,21 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  font-family: var(--font-family);
+  font-size: var(--base-font-size);
+  text-align: center;
+  align-items: center;
+  justify-content: center;
 }
 
 .cardFront {
   background-color: white;
-  border: 1px solid #ddd;
+  border: 1px solid var(--primary-color, #81d2d6);
 }
 
 .cardBack {
   background-color: white;
-  border: 1px solid #ddd;
+  border: 1px solid var(--primary-color, #81d2d6);
   transform: rotateY(180deg);
 }
 
@@ -180,7 +191,7 @@
 }
 
 .cardControls button {
-  background-color: #81d2d6;
+  background-color: var(--primary-color, #81d2d6);
   color: white;
   border: none;
   border-radius: 4px;
@@ -235,4 +246,8 @@
   .cardsList {
     width: 100%;
   }
+}
+
+.sharedPanel {
+  /* background-color: #f5f7fa; */
 }

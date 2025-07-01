@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import styles from '../css/PersonalizationSettings.module.css';
 
 const themes = [
-  { id: 'default', name: 'Domyślny', colors: { primary: '#81d2d6', secondary: '#f5f7fa' } },
-  { id: 'dark', name: 'Ciemny', colors: { primary: '#2c3e50', secondary: '#34495e' } },
-  { id: 'purple', name: 'Fioletowy', colors: { primary: '#9b59b6', secondary: '#8e44ad' } },
+  { id: 'default', name: 'Domyślny', colors: { primary: '#81d2d6', secondary: '#f5f7fa', background: '#f8f9ff', panel: '#fff', text: '#2c3e50' } },
+  { id: 'dark', name: 'Ciemny', colors: { primary: '#2c3e50', secondary: '#34495e', background: '#f8f9ff', panel: '#fff', text: '#2c3e50' } },
+  { id: 'purple', name: 'Fioletowy', colors: { primary: '#9b59b6', secondary: '#8e44ad', background: '#f8f9ff', panel: '#fff', text: '#2c3e50' } },
 ];
 
 const layouts = [
@@ -47,6 +47,9 @@ const PersonalizationSettings = () => {
     document.documentElement.style.setProperty('--primary-color', theme.colors.primary);
     document.documentElement.style.setProperty('--secondary-color', theme.colors.secondary);
     document.documentElement.style.setProperty('--base-font-size', `${settings.fontSize}px`);
+    document.documentElement.style.setProperty('--background-main', theme.colors.background);
+    document.documentElement.style.setProperty('--text-color', theme.colors.text);
+    document.documentElement.style.setProperty('--background-panel', theme.colors.panel);
     document.body.classList.remove('layout-grid', 'layout-list', 'layout-cards');
     document.body.classList.add(`layout-${settings.layout}`);
   };

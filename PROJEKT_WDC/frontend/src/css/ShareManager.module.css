@@ -68,7 +68,7 @@
   display: flex;
   margin-top: 20px;
   margin-bottom: 20px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--primary-color, #81d2d6);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -191,4 +191,8 @@
   .revokeButton {
     width: 100%;
   }
+}
+
+.managerPanel {
+  /* background-color: white; */
 }

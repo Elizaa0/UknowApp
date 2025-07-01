@@ -122,7 +122,7 @@
   width: 100%;
   min-height: 150px;
   padding: 10px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--primary-color, #81d2d6);
   border-radius: 4px;
   font-size: 14px;
   resize: vertical;
@@ -133,7 +133,7 @@
   width: 100%;
   padding: 10px;
   background-color: #fff;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--primary-color, #81d2d6);
   border-radius: 4px;
   margin-bottom: 5px;
 }
@@ -171,13 +171,13 @@
   padding: 10px;
   border-radius: 4px;
   margin: 10px 0;
-  border: 1px solid #f5c6cb;
+  border: 1px solid var(--primary-color, #81d2d6);
 }
 
 .textarea {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--primary-color, #81d2d6);
   border-radius: 4px;
   resize: vertical;
   min-height: 100px;
@@ -189,4 +189,8 @@
   outline: none;
   border-color: #80bdff;
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.generatorPanel {
+  /* background: white; */
 }

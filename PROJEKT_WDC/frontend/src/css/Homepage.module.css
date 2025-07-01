@@ -3,13 +3,15 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #bab1ff 50%, #b1c3ff 55%);
+  background: var(--background-panel, #fff);
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-color);
 }
 
 .card {
-  background: white;
+  background: var(--background-panel, #fff);
+  color: var(--text-color);
   border-radius: 16px;
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
   padding: 40px;
@@ -21,12 +23,12 @@
 .title {
   font-size: 30px;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--primary-color, #646cff);
   margin-bottom: 20px;
 }
 
 .brand {
-  color: #646cff;
+  color: var(--primary-color, #646cff);
 }
 
 .icons {
@@ -54,18 +56,18 @@
 }
 
 .link {
-  color: white;
-  background: #beafd8 ;
+  color: #fff;
+  background: var(--primary-color, #646cff);
   padding: 12px;
   border-radius: 8px;
   text-decoration: none;
   font-weight: 600;
   transition: all 0.3s ease;
+  border: none;
 }
 
 .link:hover {
-  background: linear-gradient(to right, #535bf2, #6a53f2);
-  transform: translateY(-2px);
+  filter: brightness(0.95);
 }
 
 @media (max-width: 480px) {
@@ -100,4 +102,8 @@
   font-size: 40px;
   font-weight: 700;
   color: #646cff;
+}
+
+.mainPanel {
+   background: var(--background-panel, #fff);
 }

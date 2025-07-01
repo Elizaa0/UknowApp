@@ -1,3 +1,7 @@
+:root {
+  /* background-color: white; */
+}
+
 .settingsContainer {
   max-width: 800px;
   margin: 0 auto;
@@ -21,7 +25,7 @@
   margin-bottom: 15px;
   font-size: 18px;
   color: #555;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--primary-color, #81d2d6);
   padding-bottom: 8px;
 }
 
@@ -36,7 +40,7 @@
   width: 120px;
   height: 80px;
   border-radius: 8px;
-  border: 3px solid transparent;
+  border: 2px solid var(--primary-color, #81d2d6);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -44,6 +48,7 @@
   transition: all 0.3s;
   position: relative;
   overflow: hidden;
+  background-color: var(--background-panel, #f5f7fa);
 }
 
 .themeOption span {
@@ -77,16 +82,17 @@
 .layoutOption {
   flex: 1;
   border-radius: 8px;
-  border: 2px solid #eee;
+  border: 2px solid var(--primary-color, #81d2d6);
   padding: 15px;
   cursor: pointer;
   text-align: center;
   transition: all 0.3s;
+  background-color: var(--background-panel, #f5f7fa);
 }
 
 .layoutOption.selected {
   border-color: var(--primary-color, #81d2d6);
-  background-color: rgba(129, 210, 214, 0.1);
+  background-color: var(--primary-color, #81d2d6);
 }
 
 .layoutPreview {

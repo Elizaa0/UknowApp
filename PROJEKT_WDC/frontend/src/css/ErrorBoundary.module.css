@@ -34,7 +34,7 @@
   background-color: #f8f9fa;
   padding: 15px;
   border-radius: 5px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--primary-color, #81d2d6);
 }
 
 .errorDetails summary {
@@ -59,7 +59,7 @@
 }
 
 .reloadButton {
-  background-color: #81d2d6;
+  background-color: var(--primary-color, #81d2d6);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -85,4 +85,8 @@
 
 .homeLink:hover {
   background-color: #dde1e5;
+}
+
+.errorPanel {
+  /* background-color: #f5f7fa; */
 }

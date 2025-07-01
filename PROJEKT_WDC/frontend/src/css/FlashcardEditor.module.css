@@ -22,7 +22,7 @@
 .formGroup select {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--primary-color, #81d2d6);
   border-radius: 4px;
   font-size: 16px;
 }
@@ -125,7 +125,7 @@ label {
 
 input, textarea, select {
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--primary-color, #81d2d6);
   border-radius: 4px;
   font-size: 1rem;
 }
@@ -210,4 +210,8 @@ textarea {
 
 .cancelButton:hover {
   background-color: #c0392b;
+}
+
+.editorPanel {
+  /* background-color: #fff; */
 }

@@ -1,0 +1,77 @@
+:root {
+  /* Default light theme */
+  --primary-color: #646cff;
+  --secondary-color: #7b64ff;
+  --background-color: #ffffff;
+  --background-panel: #fff;
+  --text-color: #2c3e50;
+  --font-family: 'Roboto', sans-serif;
+  --base-font-size: 16px;
+  --font-weight: 400;
+}
+
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;500;700&family=Lato:wght@400;500;700&family=Montserrat:wght@400;500;700&family=Poppins:wght@400;500;700&display=swap');
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  font-size: var(--base-font-size);
+  font-weight: var(--font-weight);
+  /* background-color: #fff; */
+  color: var(--text-color);
+  transition: all 0.3s ease;
+}
+
+/* Apply font sizes based on the selected size */
+.font-size-small {
+  --base-font-size: 14px;
+}
+
+.font-size-medium {
+  --base-font-size: 16px;
+}
+
+.font-size-large {
+  --base-font-size: 18px;
+}
+
+/* Apply font weights */
+.font-weight-normal {
+  --font-weight: 400;
+}
+
+.font-weight-medium {
+  --font-weight: 500;
+}
+
+.font-weight-bold {
+  --font-weight: 700;
+}
+
+/* Common elements styling */
+button {
+  font-family: var(--font-family);
+  font-size: var(--base-font-size);
+  font-weight: var(--font-weight);
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  transition: background 0.3s;
+}
+
+button:hover {
+  filter: brightness(0.95);
+}
+
+input, select, textarea {
+  font-family: var(--font-family);
+  font-size: var(--base-font-size);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family);
+  color: var(--primary-color);
+  font-weight: var(--font-weight);
+} 
