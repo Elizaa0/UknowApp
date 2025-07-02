@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from '../css/Dashboard.module.css';
 import FlashcardEditor from './FlashcardEditor';
 import AutoGenerator from './AutoGenerator';
 import ShareManager from './ShareManager';
 import PersonalizationSettings from './PersonalizationSettings';
+import { PersonalizationContext } from './PersonalizationContext';
 
 /**
  * Komponent pulpitu użytkownika, zarządza zestawami i fiszkami.
@@ -47,6 +48,14 @@ const Dashboard = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, fontSize, layout: userLayout, fontFamily } = useContext(PersonalizationContext);
+
+  // Mapowanie fontFamily na CSS:
+  const fontMap = {
+    default: 'Inter, Arial, sans-serif',
+    serif: 'Georgia, Times, serif',
+    monospace: 'Fira Mono, Menlo, monospace',
+  };
 
   /**
    * Sprawdza, czy fiszka jest do powtórki.
@@ -622,7 +631,7 @@ const Dashboard = () => {
   useEffect(() => {
     const savedSettings = localStorage.getItem('appSettings');
     if (savedSettings) {
-      const { theme, layout: savedLayout, fontSize } = JSON.parse(savedSettings);
+      const { theme: savedTheme, layout: savedLayout, fontSize: savedFontSize } = JSON.parse(savedSettings);
       const themes = [
         {
           id: 'default',
@@ -652,13 +661,13 @@ const Dashboard = () => {
           },
         },
       ];
-      const selectedTheme = themes.find((t) => t.id === theme) || themes[0];
+      const selectedTheme = themes.find((t) => t.id === savedTheme) || themes[0];
       document.documentElement.style.setProperty('--primary-color', selectedTheme.colors.primary);
       document.documentElement.style.setProperty(
         '--secondary-color',
         selectedTheme.colors.secondary
       );
-      document.documentElement.style.setProperty('--base-font-size', `${fontSize || 16}px`);
+      document.documentElement.style.setProperty('--base-font-size', `${savedFontSize || 16}px`);
       document.documentElement.style.setProperty(
         '--background-main',
         selectedTheme.colors.background
@@ -670,6 +679,21 @@ const Dashboard = () => {
     }
   }, [activeTab]);
 
+  // Dynamiczne ustawianie zmiennych akcentu na kontenerze dashboardu
+  useEffect(() => {
+    const accentVars = {
+      default: { accent: '#64b5f6', accentContrast: '#fff' },
+      dark: { accent: '#232946', accentContrast: '#fff' },
+      purple: { accent: '#a259c6', accentContrast: '#fff' },
+    };
+    const vars = accentVars[theme] || accentVars.default;
+    const dashboard = document.querySelector('.' + styles.dashboard);
+    if (dashboard) {
+      dashboard.style.setProperty('--accent', vars.accent);
+      dashboard.style.setProperty('--accent-contrast', vars.accentContrast);
+    }
+  }, [theme]);
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -680,7 +704,10 @@ const Dashboard = () => {
   }
 
   return (
-    <div className={styles.dashboard}>
+    <div
+      className={`${styles.dashboard} theme-${theme}`}
+      style={{ fontFamily: fontMap[fontFamily] || fontMap.default }}
+    >
       {notification && (
         <div className={`${styles.notification} ${styles[notification.type]}`}>
           {notification.message}
@@ -701,24 +728,21 @@ const Dashboard = () => {
           </div>
 
           {flashcards.length > 0 && (
-            <>
-              <div className={`${styles.learningCard} ${showAnswer ? styles.showAnswer : ''}`}>
-                <div className={styles.cardContent}>
-                  <div className={styles.cardFront}>
-                    {flashcards[currentCardIndex]?.front ||
-                      flashcards[currentCardIndex]?.question ||
-                      'Brak treści'}
-                  </div>
-                  {showAnswer && (
-                    <div className={styles.cardBack}>
-                      {flashcards[currentCardIndex]?.back ||
-                        flashcards[currentCardIndex]?.answer ||
-                        'Brak odpowiedzi'}
-                    </div>
-                  )}
+            <div className={styles.learningCard}>
+              <div className={styles.cardContent}>
+                <div className={styles.cardFront}>
+                  {flashcards[currentCardIndex]?.front ||
+                    flashcards[currentCardIndex]?.question ||
+                    'Brak treści'}
                 </div>
+                {showAnswer && (
+                  <div className={styles.cardBack}>
+                    {flashcards[currentCardIndex]?.back ||
+                      flashcards[currentCardIndex]?.answer ||
+                      'Brak odpowiedzi'}
+                  </div>
+                )}
               </div>
-
               <div className={styles.learningControls}>
                 {!showAnswer ? (
                   <button className={styles.showAnswerButton} onClick={() => setShowAnswer(true)}>
@@ -765,14 +789,13 @@ const Dashboard = () => {
                   </div>
                 )}
               </div>
-
               <div className={styles.progressContainer}>
                 <progress value={currentCardIndex + 1} max={flashcards.length} />
                 <button className={styles.exitButton} onClick={() => setLearningMode(false)}>
                   Zakończ naukę
                 </button>
               </div>
-            </>
+            </div>
           )}
         </div>
       ) : (
@@ -996,9 +1019,13 @@ const Dashboard = () => {
                         </button>
                       </div>
                     ) : filteredByStat.length > 0 ? (
-                      <ul className={`${styles.cardGrid} ${styles[layout]}`}>
+                      <ul className={`${styles.cardGrid} ${styles[userLayout]}`}>
                         {filteredFlashcards.map((card) => (
-                          <li key={card.id} className={styles.flashcardItem}>
+                          <li
+                            key={card.id}
+                            className={styles.flashcardItem}
+                            style={{ fontSize: fontSize + 'px', fontFamily: fontMap[fontFamily] || fontMap.default }}
+                          >
                             <div className={styles.cardHeader}>
                               <span className={styles.cardCategory}>
                                 {typeof card.category === 'object'

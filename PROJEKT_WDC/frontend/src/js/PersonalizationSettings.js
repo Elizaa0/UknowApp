@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import styles from '../css/PersonalizationSettings.module.css';
+import React, { useContext, useState } from "react";
+import { PersonalizationContext } from "./PersonalizationContext";
+import styles from "../css/PersonalizationSettings.module.css";
 
 const themes = [
   {
@@ -43,118 +44,76 @@ const layouts = [
   { id: 'cards', name: 'Karty' },
 ];
 
+const fontOptions = [
+  { value: "default", label: "Domyślna" },
+  { value: "serif", label: "Szeryfowa" },
+  { value: "monospace", label: "Monospace" },
+];
+
 /**
  * Komponent ustawień personalizacji interfejsu użytkownika.
  * @component
  */
 const PersonalizationSettings = () => {
-  const [selectedTheme, setSelectedTheme] = useState('default');
-  const [selectedLayout, setSelectedLayout] = useState('grid');
-  const [fontSize, setFontSize] = useState(16);
-  const [isSaved, setIsSaved] = useState(false);
-
-  useEffect(() => {
-    const savedSettings = localStorage.getItem('appSettings');
-    if (savedSettings) {
-      const { theme, layout, fontSize: savedFontSize } = JSON.parse(savedSettings);
-      setSelectedTheme(theme || 'default');
-      setSelectedLayout(layout || 'grid');
-      setFontSize(savedFontSize || 16);
-    }
-  }, []);
+  const { theme, setTheme, fontSize, setFontSize, layout, setLayout, fontFamily, setFontFamily } = useContext(PersonalizationContext);
+  const [localTheme, setLocalTheme] = useState(theme);
+  const [localFontSize, setLocalFontSize] = useState(fontSize);
+  const [localLayout, setLocalLayout] = useState(layout);
+  const [localFontFamily, setLocalFontFamily] = useState(fontFamily);
+  const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
-    const settings = {
-      theme: selectedTheme,
-      layout: selectedLayout,
-      fontSize,
-    };
-
-    localStorage.setItem('appSettings', JSON.stringify(settings));
-    applySettings(settings);
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
-  };
-
-  /**
-   * Stosuje ustawienia personalizacji do stylów aplikacji.
-   * @param {Object} settings - Ustawienia personalizacji.
-   */
-  const applySettings = (settings) => {
-    const theme = themes.find((t) => t.id === settings.theme) || themes[0];
-    document.documentElement.style.setProperty('--primary-color', theme.colors.primary);
-    document.documentElement.style.setProperty('--secondary-color', theme.colors.secondary);
-    document.documentElement.style.setProperty('--base-font-size', `${settings.fontSize}px`);
-    document.documentElement.style.setProperty('--background-main', theme.colors.background);
-    document.documentElement.style.setProperty('--text-color', theme.colors.text);
-    document.documentElement.style.setProperty('--background-panel', theme.colors.panel);
-    document.body.classList.remove('layout-grid', 'layout-list', 'layout-cards');
-    document.body.classList.add(`layout-${settings.layout}`);
+    setTheme(localTheme);
+    setFontSize(localFontSize);
+    setLayout(localLayout);
+    setFontFamily(localFontFamily);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   return (
-    <div className={styles.settingsContainer}>
+    <div className={styles.container}>
       <h2>Personalizacja interfejsu</h2>
-
-      <div className={styles.settingsSection}>
-        <h3>Motyw kolorystyczny</h3>
-        <div className={styles.themeOptions}>
-          {themes.map((theme) => (
-            <div
-              key={theme.id}
-              className={`${styles.themeOption} ${selectedTheme === theme.id ? styles.selected : ''}`}
-              onClick={() => setSelectedTheme(theme.id)}
-              style={{
-                backgroundColor: theme.colors.primary,
-                borderColor: theme.colors.secondary,
-              }}
+      <div className={styles.section}>
+        <div className={styles.label}>Motyw kolorystyczny</div>
+        <div className={styles.themeRow}>
+          <button className={localTheme === "default" ? styles.selected : ""} onClick={() => setLocalTheme("default")}>Domyślny</button>
+          <button className={localTheme === "dark" ? styles.selected : ""} onClick={() => setLocalTheme("dark")}>Ciemny</button>
+          <button className={localTheme === "purple" ? styles.selected : ""} onClick={() => setLocalTheme("purple")}>Fioletowy</button>
+        </div>
+      </div>
+      <div className={styles.section}>
+        <div className={styles.label}>Układ fiszek</div>
+        <div className={styles.layoutRow}>
+          <button className={localLayout === "grid" ? styles.selected : ""} onClick={() => setLocalLayout("grid")}>Siatka</button>
+          <button className={localLayout === "list" ? styles.selected : ""} onClick={() => setLocalLayout("list")}>Lista</button>
+          <button className={localLayout === "cards" ? styles.selected : ""} onClick={() => setLocalLayout("cards")}>Karty</button>
+        </div>
+      </div>
+      <div className={styles.section}>
+        <div className={styles.label}>Rozmiar czcionki</div>
+        <div className={styles.fontSizeRow}>
+          <button onClick={() => setLocalFontSize(Math.max(10, localFontSize - 2))}>-</button>
+          <span>{localFontSize}px</span>
+          <button onClick={() => setLocalFontSize(Math.min(40, localFontSize + 2))}>+</button>
+        </div>
+      </div>
+      <div className={styles.section}>
+        <div className={styles.label}>Czcionka</div>
+        <div className={styles.fontRow}>
+          {fontOptions.map(opt => (
+            <button
+              key={opt.value}
+              className={localFontFamily === opt.value ? styles.selected : ""}
+              onClick={() => setLocalFontFamily(opt.value)}
             >
-              <span>{theme.name}</span>
-            </div>
+              {opt.label}
+            </button>
           ))}
         </div>
       </div>
-
-      <div className={styles.settingsSection}>
-        <h3>Układ fiszek</h3>
-        <div className={styles.layoutOptions}>
-          {layouts.map((layout) => (
-            <div
-              key={layout.id}
-              className={`${styles.layoutOption} ${selectedLayout === layout.id ? styles.selected : ''}`}
-              onClick={() => setSelectedLayout(layout.id)}
-            >
-              <div className={`${styles.layoutPreview} ${styles[`preview-${layout.id}`]}`}></div>
-              <span>{layout.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className={styles.settingsSection}>
-        <h3>Rozmiar czcionki</h3>
-        <div className={styles.fontSizeControl}>
-          <button
-            className={styles.fontSizeButton}
-            onClick={() => setFontSize((prev) => Math.max(12, prev - 1))}
-          >
-            -
-          </button>
-          <span className={styles.fontSizeValue}>{fontSize}px</span>
-          <button
-            className={styles.fontSizeButton}
-            onClick={() => setFontSize((prev) => Math.min(24, prev + 1))}
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <button className={styles.saveButton} onClick={handleSave}>
-        Zapisz ustawienia
-      </button>
-
-      {isSaved && <div className={styles.saveConfirmation}>Ustawienia zapisane pomyślnie!</div>}
+      <button className={styles.saveButton} onClick={handleSave}>Zapisz ustawienia</button>
+      {saved && <div style={{color: '#7c3fa0', marginTop: 12, textAlign: 'center'}}>Ustawienia zapisane!</div>}
     </div>
   );
 };

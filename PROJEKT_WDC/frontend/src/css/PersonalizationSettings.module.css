@@ -6,6 +6,74 @@
   /* background-color: white; */
 }
 
+.container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  padding: 32px 24px;
+  max-width: 400px;
+  margin: 32px auto;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  color: #22223b;
+}
+
+.section {
+  margin-bottom: 24px;
+}
+
+.label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #4b3869;
+}
+
+.themeRow, .layoutRow, .fontSizeRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.fontRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+button, .selected {
+  background: var(--accent, #a259c6) !important;
+  color: var(--accent-contrast, #fff) !important;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, background 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+button.selected, button:focus {
+  background: var(--accent, #a259c6) !important;
+  color: var(--accent-contrast, #fff) !important;
+  box-shadow: 0 4px 12px rgba(162,89,198,0.15);
+}
+
+button:active {
+  background: #7c3fa0 !important;
+  color: #fff !important;
+}
+
+.fontSizeRow span {
+  display: inline-block;
+  min-width: 48px;
+  text-align: center;
+  font-size: 18px;
+  line-height: 40px;
+}
+
 .settingsContainer {
   max-width: 800px;
   margin: 0 auto;

@@ -235,14 +235,15 @@ const LearningSession = () => {
         </div>
       </div>
 
-      <div
-        className={`${styles.flashcard} ${isFlipped ? styles.flipped : ''}`}
-        onClick={() => setIsFlipped(!isFlipped)}
-      >
-        <div className={styles.cardFace + ' ' + styles.front}>{currentCard.front}</div>
-        <div className={styles.cardFace + ' ' + styles.back}>{currentCard.back}</div>
+      {/* Fiszka z flipem */}
+      <div className={styles.learningFlashcard + (isFlipped ? ' ' + styles.flipped : '')} onClick={() => !isFlipped && setIsFlipped(true)}>
+        <div className={styles.learningCardContent}>
+          <div className={styles.learningFront}>{currentCard.front}</div>
+          <div className={styles.learningBack}>{currentCard.back}</div>
+        </div>
       </div>
 
+      {/* Przyciski pod fiszką */}
       <div className={styles.actions}>
         {!isFlipped ? (
           <button className={styles.flipButton} onClick={() => setIsFlipped(true)}>
@@ -250,10 +251,10 @@ const LearningSession = () => {
           </button>
         ) : (
           <>
-            <button className={styles.incorrectButton} onClick={() => handleAnswer(false)}>
+            <button className={styles.incorrectButton} onClick={() => { setIsFlipped(false); handleAnswer(false); }}>
               Nie znam
             </button>
-            <button className={styles.correctButton} onClick={() => handleAnswer(true)}>
+            <button className={styles.correctButton} onClick={() => { setIsFlipped(false); handleAnswer(true); }}>
               Znam
             </button>
           </>
