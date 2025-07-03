@@ -128,14 +128,6 @@
   justify-content: center;
 }
 
-/* .flashcard {
-  // ... wszystkie style tej klasy zakomentowane, by nie nadpisywały sekcji nauki
-}
-
-/* .flashcard.flipped .cardFace {
-  // ... wszystkie style tej klasy zakomentowane, by nie nadpisywały sekcji nauki
-} */
-
 .cardFace {
   position: relative;
   width: 100%;

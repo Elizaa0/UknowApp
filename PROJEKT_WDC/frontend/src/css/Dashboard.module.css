@@ -1122,7 +1122,6 @@ progress::-webkit-progress-value {
     font-size: 1.2rem;
   }
 }
-/* Dodaj te style na końcu pliku */
 .generatedFlashcards {
   margin-top: 2rem;
   border-top: 1px solid #eee;
